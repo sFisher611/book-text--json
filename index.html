@@ -187,6 +187,66 @@ input[type=color]{
 .hint code{background:#f0f0f0;padding:1px 5px;border-radius:3px;}
 
 footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
+
+/* ---------- settings modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;
+  background:rgba(23,23,23,0.55);
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding:30px 16px;
+  overflow-y:auto;
+  z-index:1000;
+}
+.modal-backdrop.show{display:flex;}
+.modal{
+  background:#fff;
+  border:3px solid var(--ink);
+  border-radius:8px;
+  box-shadow:8px 8px 0 var(--ink);
+  max-width:760px;width:100%;
+  padding:20px;
+}
+.modal h2{
+  font-family:'Bangers',cursive;
+  font-size:28px;letter-spacing:1px;
+  margin:0 0 4px 0;
+}
+.modal .sub{font-size:13px;color:#555;margin-bottom:16px;}
+.modal-section-title{
+  font-size:12px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:#777;
+  margin:18px 0 8px 0;
+  border-bottom:2px dashed #ddd;
+  padding-bottom:6px;
+}
+.cfg-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 14px;
+}
+@media (max-width:600px){.cfg-grid{grid-template-columns:1fr;}}
+.cfg-field label{
+  display:block;font-size:11px;font-weight:700;color:#444;margin-bottom:3px;
+}
+.cfg-field .orig{color:#999;font-weight:500;}
+.cfg-field input{
+  width:100%;
+  font-family:'Space Mono',monospace;
+  font-size:13px;
+  border:2px solid var(--ink);
+  border-radius:5px;
+  padding:7px 9px;
+  outline:none;
+}
+.cfg-field input:focus{border-color:var(--blue);}
+.modal-actions{
+  display:flex;gap:8px;margin-top:20px;
+  flex-wrap:wrap;
+  border-top:2px dashed #ddd;
+  padding-top:16px;
+}
 </style>
 </head>
 <body>
@@ -195,6 +255,7 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
 <header>
   <h1>MANGA TEXT → JSON</h1>
   <p>Sarlavha, kichik sarlavha va formatlangan/matematik bloklardan JSON yig'ing</p>
+  <button class="btn wide purple" id="settingsBtn" style="margin-top:10px;">⚙ JSON kalitlarini sozlash</button>
 </header>
 
 <div class="grid">
@@ -304,6 +365,48 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
 
 <footer>Har bir blok <code>type</code> ("text" yoki "math"), <code>content</code> va kerakli formatlash kalitlari bilan chiqadi.</footer>
 
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h2>⚙ JSON sozlamalari</h2>
+    <div class="sub">Kalit nomlarini va holat qiymatlarini o'zingizga moslab o'zgartiring. Bo'sh qoldirsangiz — standart nom ishlatiladi.</div>
+
+    <div class="modal-section-title">Asosiy kalitlar</div>
+    <div class="cfg-grid">
+      <div class="cfg-field"><label>title <span class="orig">(sarlavha)</span></label><input data-cfgkey="title" placeholder="title"></div>
+      <div class="cfg-field"><label>subtitle <span class="orig">(kichik sarlavha)</span></label><input data-cfgkey="subtitle" placeholder="subtitle"></div>
+      <div class="cfg-field"><label>blocks <span class="orig">(bloklar ro'yxati)</span></label><input data-cfgkey="blocks" placeholder="blocks"></div>
+      <div class="cfg-field"><label>type <span class="orig">(blok turi kaliti)</span></label><input data-cfgkey="type" placeholder="type"></div>
+      <div class="cfg-field"><label>content <span class="orig">(matn kaliti)</span></label><input data-cfgkey="content" placeholder="content"></div>
+    </div>
+
+    <div class="modal-section-title">Format kalitlari</div>
+    <div class="cfg-grid">
+      <div class="cfg-field"><label>font_weight <span class="orig">(qalin)</span></label><input data-cfgkey="font_weight" placeholder="font_weight"></div>
+      <div class="cfg-field"><label>font_style <span class="orig">(qiya)</span></label><input data-cfgkey="font_style" placeholder="font_style"></div>
+      <div class="cfg-field"><label>text_decoration <span class="orig">(chizish)</span></label><input data-cfgkey="text_decoration" placeholder="text_decoration"></div>
+      <div class="cfg-field"><label>color <span class="orig">(matn rangi)</span></label><input data-cfgkey="color" placeholder="color"></div>
+      <div class="cfg-field"><label>background_color <span class="orig">(fon rangi)</span></label><input data-cfgkey="background_color" placeholder="background_color"></div>
+      <div class="cfg-field"><label>font_size <span class="orig">(razmer)</span></label><input data-cfgkey="font_size" placeholder="font_size"></div>
+    </div>
+
+    <div class="modal-section-title">Holat (qiymat) nomlari</div>
+    <div class="cfg-grid">
+      <div class="cfg-field"><label>type: matn holati</label><input data-cfgval="type_text" placeholder="text"></div>
+      <div class="cfg-field"><label>type: matematik holati</label><input data-cfgval="type_math" placeholder="math"></div>
+      <div class="cfg-field"><label>font_weight qiymati</label><input data-cfgval="bold" placeholder="bold"></div>
+      <div class="cfg-field"><label>font_style qiymati</label><input data-cfgval="italic" placeholder="italic"></div>
+      <div class="cfg-field"><label>text_decoration: tagiga chizish</label><input data-cfgval="underline" placeholder="underline"></div>
+      <div class="cfg-field"><label>text_decoration: ustidan chizish</label><input data-cfgval="linethrough" placeholder="line-through"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn blue wide" id="cfgApply">✓ Qo'llash</button>
+      <button class="btn wide" id="cfgReset">↺ Standart holatga qaytarish</button>
+      <button class="btn wide red" id="cfgClose">✕ Yopish</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -543,6 +646,62 @@ document.getElementById('fClear').addEventListener('click', ()=>{
   floatToolbar.style.display = 'none';
 });
 
+// ---------- configurable JSON keys/values ----------
+const DEFAULT_CONFIG = {
+  keys: {
+    title: 'title', subtitle: 'subtitle', blocks: 'blocks',
+    type: 'type', content: 'content',
+    font_weight: 'font_weight', font_style: 'font_style',
+    text_decoration: 'text_decoration',
+    color: 'color', background_color: 'background_color', font_size: 'font_size'
+  },
+  values: {
+    type_text: 'text', type_math: 'math',
+    bold: 'bold', italic: 'italic',
+    underline: 'underline', linethrough: 'line-through'
+  }
+};
+let CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+const modalBackdrop = document.getElementById('modalBackdrop');
+
+function fillModalInputs(cfg){
+  modalBackdrop.querySelectorAll('input[data-cfgkey]').forEach(inp=>{
+    inp.value = cfg.keys[inp.dataset.cfgkey];
+  });
+  modalBackdrop.querySelectorAll('input[data-cfgval]').forEach(inp=>{
+    inp.value = cfg.values[inp.dataset.cfgval];
+  });
+}
+
+document.getElementById('settingsBtn').addEventListener('click', ()=>{
+  fillModalInputs(CONFIG);
+  modalBackdrop.classList.add('show');
+});
+document.getElementById('cfgClose').addEventListener('click', ()=>{
+  modalBackdrop.classList.remove('show');
+});
+modalBackdrop.addEventListener('mousedown', (e)=>{
+  if(e.target === modalBackdrop) modalBackdrop.classList.remove('show');
+});
+document.getElementById('cfgReset').addEventListener('click', ()=>{
+  fillModalInputs(DEFAULT_CONFIG);
+});
+document.getElementById('cfgApply').addEventListener('click', ()=>{
+  const newCfg = {keys:{}, values:{}};
+  modalBackdrop.querySelectorAll('input[data-cfgkey]').forEach(inp=>{
+    const k = inp.dataset.cfgkey;
+    newCfg.keys[k] = inp.value.trim() || DEFAULT_CONFIG.keys[k];
+  });
+  modalBackdrop.querySelectorAll('input[data-cfgval]').forEach(inp=>{
+    const k = inp.dataset.cfgval;
+    newCfg.values[k] = inp.value.trim() || DEFAULT_CONFIG.values[k];
+  });
+  CONFIG = newCfg;
+  modalBackdrop.classList.remove('show');
+  generateJSON();
+});
+
 // ---------- DOM -> JSON blocks ----------
 function rgbToHex(rgb){
   if(!rgb) return null;
@@ -627,6 +786,20 @@ function mergeAdjacent(blocks){
   return merged;
 }
 
+function remapBlock(b){
+  const out = {};
+  out[CONFIG.keys.type] = b.type === 'math' ? CONFIG.values.type_math : CONFIG.values.type_text;
+  out[CONFIG.keys.content] = b.content;
+  if(b.font_weight) out[CONFIG.keys.font_weight] = CONFIG.values.bold;
+  if(b.font_style) out[CONFIG.keys.font_style] = CONFIG.values.italic;
+  if(b.text_decoration === 'underline') out[CONFIG.keys.text_decoration] = CONFIG.values.underline;
+  if(b.text_decoration === 'line-through') out[CONFIG.keys.text_decoration] = CONFIG.values.linethrough;
+  if(b.color) out[CONFIG.keys.color] = b.color;
+  if(b.background_color) out[CONFIG.keys.background_color] = b.background_color;
+  if(b.font_size) out[CONFIG.keys.font_size] = b.font_size;
+  return out;
+}
+
 function generateJSON(){
   let blocks = [];
   for(const child of editor.childNodes){
@@ -635,15 +808,12 @@ function generateJSON(){
   while(blocks.length && blocks[blocks.length-1].content === "\n"){
     blocks.pop();
   }
-  blocks = mergeAdjacent(blocks).map(b=>{
-    const {type, content, ...rest} = b;
-    return {type, content, ...rest};
-  });
+  blocks = mergeAdjacent(blocks).map(remapBlock);
 
   const doc = {
-    title: titleInput.value,
-    subtitle: subtitleInput.value,
-    blocks: blocks
+    [CONFIG.keys.title]: titleInput.value,
+    [CONFIG.keys.subtitle]: subtitleInput.value,
+    [CONFIG.keys.blocks]: blocks
   };
 
   const json = JSON.stringify(doc, null, 2);
