@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Manga Text → JSON</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root{
+  --ink:#171717;
+  --paper:#faf9f4;
+  --red:#e8394d;
+  --yellow:#ffcb05;
+  --blue:#2f6fed;
+  --green:#1f9d55;
+  --purple:#7b4fe0;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  padding:24px;
+  background-color:var(--paper);
+  background-image:radial-gradient(circle, rgba(23,23,23,0.08) 1px, transparent 1px);
+  background-size:14px 14px;
+  font-family:'Space Grotesk', sans-serif;
+  color:var(--ink);
+}
+
+.wrap{max-width:1200px;margin:0 auto;}
+
+header{text-align:center;margin-bottom:26px;}
+header h1{
+  font-family:'Bangers', cursive;
+  font-size:50px;
+  letter-spacing:2px;
+  margin:0;
+  text-shadow:4px 4px 0 var(--yellow), 8px 8px 0 var(--ink);
+  display:inline-block;
+  transform:rotate(-1.5deg);
+}
+header p{font-size:14px;font-weight:500;color:#444;margin-top:10px;}
+
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;}
+@media (max-width:880px){.grid{grid-template-columns:1fr;}}
+
+.panel{
+  background:#fff;
+  border:3px solid var(--ink);
+  border-radius:6px;
+  box-shadow:7px 7px 0 var(--ink);
+  padding:16px;
+}
+.panel-title{
+  font-family:'Bangers', cursive;
+  font-size:22px;
+  letter-spacing:1px;
+  margin:0 0 12px 0;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title .tag{
+  background:var(--red);color:#fff;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;font-weight:700;
+  padding:3px 8px;border-radius:20px;letter-spacing:.5px;
+}
+
+.meta{display:flex;gap:10px;margin-bottom:12px;}
+.meta .field{flex:1;}
+.meta label{
+  display:block;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:4px;color:#555;
+}
+.meta input{
+  width:100%;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:15px;font-weight:700;
+  border:2px solid var(--ink);
+  border-radius:5px;
+  padding:8px 10px;
+  outline:none;
+}
+.meta input:focus{border-color:var(--blue);}
+
+.toolbar{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin-bottom:8px;padding-bottom:10px;
+  border-bottom:2px dashed var(--ink);
+}
+.toolbar.math{border-bottom:2px dashed var(--purple);margin-bottom:12px;}
+.toolbar-label{
+  width:100%;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;color:#777;
+  margin-bottom:2px;
+}
+
+.btn{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:13px;
+  border:2px solid var(--ink);
+  background:#fff;color:var(--ink);
+  border-radius:5px;padding:7px 10px;
+  cursor:pointer;box-shadow:2px 2px 0 var(--ink);
+  transition:transform .08s ease;user-select:none;
+}
+.btn:hover{background:var(--yellow);}
+.btn:active, .btn.active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink);}
+.btn.wide{padding:7px 12px;}
+.btn.red{background:var(--red);color:#fff;}
+.btn.red:hover{background:#ff5468;}
+.btn.blue{background:var(--blue);color:#fff;}
+.btn.blue:hover{background:#5a8fff;}
+.btn.purple{background:var(--purple);color:#fff;}
+.btn.purple:hover{background:#9b74ff;}
+.btn.sym{width:36px;padding:7px 0;text-align:center;}
+
+select.btn{cursor:pointer;}
+
+input[type=color]{
+  width:38px;height:36px;border:2px solid var(--ink);
+  border-radius:5px;padding:2px;background:#fff;
+  cursor:pointer;box-shadow:2px 2px 0 var(--ink);
+}
+
+#editor{
+  min-height:240px;
+  border:2px solid var(--ink);
+  border-radius:5px;
+  padding:16px;
+  font-size:17px;line-height:1.6;outline:none;
+  background:repeating-linear-gradient(#fff, #fff 31px, #eee 32px);
+}
+#editor:focus{border-color:var(--blue);}
+#editor sub, #editor sup{color:var(--purple);font-weight:700;}
+#editor .math-run{color:var(--purple);font-weight:700;background:#f4effe;padding:0 2px;border-radius:3px;}
+
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+
+#jsonOut{
+  width:100%;min-height:360px;
+  font-family:'Space Mono', monospace;
+  font-size:13px;line-height:1.5;
+  border:2px solid var(--ink);border-radius:5px;
+  padding:14px;background:#0f0f0f;color:#8bffa3;
+  resize:vertical;white-space:pre;
+}
+
+.float-toolbar{
+  position:fixed;
+  display:none;
+  align-items:center;
+  gap:4px;
+  background:var(--ink);
+  border:2px solid var(--ink);
+  border-radius:8px;
+  padding:6px;
+  box-shadow:4px 4px 0 rgba(0,0,0,0.35);
+  z-index:999;
+}
+.float-toolbar button{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:13px;
+  border:none;
+  background:#2a2a2a;
+  color:#fff;
+  border-radius:5px;
+  padding:6px 9px;
+  cursor:pointer;
+  line-height:1;
+}
+.float-toolbar button:hover{background:var(--yellow);color:var(--ink);}
+.float-toolbar button.purple-fb{background:#4a2f8a;}
+.float-toolbar button.purple-fb:hover{background:var(--purple);}
+.float-toolbar .dot{
+  width:20px;height:20px;
+  border-radius:50%;
+  border:2px solid #fff;
+  cursor:pointer;
+  padding:0;
+}
+.float-toolbar .sep{width:1px;height:20px;background:#444;margin:0 2px;}
+
+.hint{font-size:12px;color:#555;margin-top:8px;line-height:1.6;}
+.hint b{color:var(--ink);}
+.hint code{background:#f0f0f0;padding:1px 5px;border-radius:3px;}
+
+footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>MANGA TEXT → JSON</h1>
+  <p>Sarlavha, kichik sarlavha va formatlangan/matematik bloklardan JSON yig'ing</p>
+</header>
+
+<div class="grid">
+
+  <div class="panel">
+    <div class="panel-title">✎ Tahrirlovchi <span class="tag">EDITOR</span></div>
+
+    <div class="meta">
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="titleInput" placeholder="Introduction" value="Introduction">
+      </div>
+      <div class="field">
+        <label>Subtitle</label>
+        <input type="text" id="subtitleInput" placeholder="My Story" value="My Story">
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn wide" data-cmd="bold"><b>B</b></button>
+      <button class="btn wide" data-cmd="italic"><i>I</i></button>
+      <button class="btn wide" data-cmd="underline"><u>U</u></button>
+      <button class="btn wide" data-cmd="strikeThrough"><s>S</s></button>
+
+      <select id="fontSize" class="btn" title="Shrift o'lchami">
+        <option value="">Razmer</option>
+        <option value="12px">12</option>
+        <option value="14px">14</option>
+        <option value="16px">16</option>
+        <option value="18px">18</option>
+        <option value="20px">20</option>
+        <option value="24px">24</option>
+        <option value="28px">28</option>
+        <option value="32px">32</option>
+        <option value="40px">40</option>
+        <option value="56px">56</option>
+      </select>
+
+      <label class="btn wide" style="display:flex;align-items:center;gap:5px;padding:4px 8px;">
+        A <input type="color" id="textColor" value="#e8394d" title="Matn rangi">
+      </label>
+      <label class="btn wide" style="display:flex;align-items:center;gap:5px;padding:4px 8px;">
+        ▨ <input type="color" id="bgColor" value="#ffcb05" title="Fon (belgilash) rangi">
+      </label>
+
+      <button class="btn wide" id="paraBtn" title="Yangi abzas qo'shish">¶ Abzas</button>
+      <button class="btn wide red" id="clearFmt" title="Formatni tozalash">Tozalash</button>
+    </div>
+
+    <div class="toolbar math">
+      <div class="toolbar-label">Matematika / Kimyo — tanlangan qismni x² yoki H₂O qiling, yoki belgi qo'ying</div>
+      <button class="btn wide purple" id="supBtn" title="Daraja (x²)">x²</button>
+      <button class="btn wide purple" id="subBtn" title="Indeks (H₂O)">x₂</button>
+      <button class="btn wide purple" id="mathToggle" title="Belgilangan matnni butunlay 'math' turiga o'tkazish (masalan ∫f(x)dx)">𝑓(x) Math</button>
+      <button class="btn sym" data-sym="∫" title="Integral">∫</button>
+      <button class="btn sym" data-sym="√" title="Kvadrat ildiz">√</button>
+      <button class="btn sym" data-sym="π" title="Pi">π</button>
+      <button class="btn sym" data-sym="±" title="Plyus-minus">±</button>
+      <button class="btn sym" data-sym="≤" title="Kichik yoki teng">≤</button>
+      <button class="btn sym" data-sym="≥" title="Katta yoki teng">≥</button>
+      <button class="btn sym" data-sym="∞" title="Cheksizlik">∞</button>
+      <button class="btn sym" data-sym="Σ" title="Summa">Σ</button>
+      <button class="btn sym" data-sym="Δ" title="Delta">Δ</button>
+      <button class="btn sym" data-sym="°" title="Gradus">°</button>
+    </div>
+
+    <div id="editor" contenteditable="true" spellcheck="false"></div>
+
+    <div class="float-toolbar" id="floatToolbar">
+      <button data-fcmd="bold"><b>B</b></button>
+      <button data-fcmd="italic"><i>I</i></button>
+      <button data-fcmd="underline"><u>U</u></button>
+      <button data-fcmd="strikeThrough"><s>S</s></button>
+      <div class="sep"></div>
+      <button class="purple-fb" data-fcmd="superscript">x²</button>
+      <button class="purple-fb" data-fcmd="subscript">x₂</button>
+      <button class="purple-fb" id="fMathToggle">𝑓(x)</button>
+      <div class="sep"></div>
+      <button class="dot" data-fcolor="#e8394d" style="background:#e8394d"></button>
+      <button class="dot" data-fcolor="#2f6fed" style="background:#2f6fed"></button>
+      <button class="dot" data-fcolor="#1f9d55" style="background:#1f9d55"></button>
+      <button class="dot" data-fcolor="#171717" style="background:#171717"></button>
+      <div class="sep"></div>
+      <button id="fClear" title="Tozalash">✕</button>
+    </div>
+
+    <div class="hint">
+      Uzun matnda: matnni belgilashingiz bilan tepada kichik <b>suzuvchi panel</b> chiqadi — tepaga chiqmasdan o'sha yerning o'zida bold/italic/rang/daraja qo'llay olasiz.<br>
+      <b>H2O misoli:</b> "H2O" deb yozing, "2" raqamini belgilab <b>x₂</b> tugmasini bosing — u indeksga aylanadi va JSON'da avtomatik <code>"type":"math"</code> bo'lib chiqadi, qolgan "H" va "O" esa oddiy <code>"type":"text"</code> bo'lib qoladi.<br>
+      <b>Integral / formula misoli:</b> "∫ x dx = x²/2 + C" deb yozib, hammasini belgilang va <b>𝑓(x) Math</b> tugmasini bosing — butun ifoda bitta <code>"type":"math"</code> blok bo'ladi.<br>
+      <b>Enter</b> — yangi abzas (<code>\n</code>, <code>"type":"text"</code>).
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">{ } Natija <span class="tag">JSON</span></div>
+    <textarea id="jsonOut" readonly placeholder="JSON shu yerda chiqadi..."></textarea>
+    <div class="actions">
+      <button class="btn blue wide" id="genBtn">⚡ JSON yaratish</button>
+      <button class="btn wide" id="copyBtn">⧉ Nusxalash</button>
+      <button class="btn wide" id="downloadBtn">⇩ Yuklab olish</button>
+    </div>
+    <div class="hint" id="copyMsg" style="min-height:16px;color:var(--green);font-weight:700;"></div>
+  </div>
+
+</div>
+
+<footer>Har bir blok <code>type</code> ("text" yoki "math"), <code>content</code> va kerakli formatlash kalitlari bilan chiqadi.</footer>
+
+</div>
+
+<script>
+const editor = document.getElementById('editor');
+const jsonOut = document.getElementById('jsonOut');
+const copyMsg = document.getElementById('copyMsg');
+const titleInput = document.getElementById('titleInput');
+const subtitleInput = document.getElementById('subtitleInput');
+
+editor.innerHTML = "ChatGPT can help name the style, pull out useful details, and suggest <b>products</b> for you to explore. For example water is H2O.";
+
+// ---------- keep selection alive across toolbar clicks ----------
+let savedRange = null;
+function saveSelection(){
+  const sel = window.getSelection();
+  if(sel.rangeCount > 0 && editor.contains(sel.anchorNode)){
+    savedRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+function restoreSelection(){
+  if(!savedRange) return;
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+}
+editor.addEventListener('mouseup', saveSelection);
+editor.addEventListener('keyup', saveSelection);
+
+// ---------- basic format buttons ----------
+document.querySelectorAll('.btn[data-cmd]').forEach(btn=>{
+  btn.addEventListener('mousedown', e=>e.preventDefault());
+  btn.addEventListener('click', ()=>{
+    editor.focus();
+    document.execCommand(btn.dataset.cmd, false, null);
+    saveSelection();
+  });
+});
+
+document.getElementById('clearFmt').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('clearFmt').addEventListener('click', ()=>{
+  editor.focus();
+  document.execCommand('removeFormat', false, null);
+});
+
+document.getElementById('paraBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('paraBtn').addEventListener('click', ()=>{
+  editor.focus();
+  restoreSelection();
+  document.execCommand('insertHTML', false, '<br class="p-break">');
+});
+
+editor.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    document.execCommand('insertHTML', false, '<br class="p-break">');
+  }
+});
+
+editor.addEventListener('paste', (e)=>{
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
+});
+
+// ---------- wrap selection in a styled span ----------
+function wrapSelection(styleProp, value){
+  restoreSelection();
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement('span');
+  span.style[styleProp] = value;
+  try{ range.surroundContents(span); }
+  catch(err){
+    const contents = range.extractContents();
+    span.appendChild(contents);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  saveSelection();
+}
+
+document.getElementById('fontSize').addEventListener('change', (e)=>{
+  if(!e.target.value) return;
+  editor.focus();
+  wrapSelection('fontSize', e.target.value);
+  e.target.value = "";
+});
+document.getElementById('textColor').addEventListener('input', (e)=>{
+  editor.focus();
+  wrapSelection('color', e.target.value);
+});
+document.getElementById('bgColor').addEventListener('input', (e)=>{
+  editor.focus();
+  wrapSelection('backgroundColor', e.target.value);
+});
+
+// ---------- math tools ----------
+document.getElementById('supBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('supBtn').addEventListener('click', ()=>{
+  editor.focus(); restoreSelection();
+  document.execCommand('superscript', false, null);
+  saveSelection();
+});
+document.getElementById('subBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('subBtn').addEventListener('click', ()=>{
+  editor.focus(); restoreSelection();
+  document.execCommand('subscript', false, null);
+  saveSelection();
+});
+
+document.getElementById('mathToggle').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('mathToggle').addEventListener('click', ()=>{
+  editor.focus();
+  restoreSelection();
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement('span');
+  span.className = 'math-run';
+  span.setAttribute('data-math', 'true');
+  try{ range.surroundContents(span); }
+  catch(err){
+    const contents = range.extractContents();
+    span.appendChild(contents);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  saveSelection();
+});
+
+document.querySelectorAll('.btn.sym').forEach(btn=>{
+  btn.addEventListener('mousedown', e=>e.preventDefault());
+  btn.addEventListener('click', ()=>{
+    editor.focus();
+    restoreSelection();
+    const span = document.createElement('span');
+    span.className = 'math-run';
+    span.setAttribute('data-math', 'true');
+    span.textContent = btn.dataset.sym;
+    const sel = window.getSelection();
+    let range;
+    if(sel.rangeCount && editor.contains(sel.anchorNode)){
+      range = sel.getRangeAt(0);
+    } else {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+    range.deleteContents();
+    range.insertNode(span);
+    range.setStartAfter(span);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    saveSelection();
+  });
+});
+
+// ---------- floating selection toolbar ----------
+const floatToolbar = document.getElementById('floatToolbar');
+
+function updateFloatToolbar(){
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed || !editor.contains(sel.anchorNode)){
+    floatToolbar.style.display = 'none';
+    return;
+  }
+  const range = sel.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  if(rect.width === 0 && rect.height === 0){
+    floatToolbar.style.display = 'none';
+    return;
+  }
+  floatToolbar.style.display = 'flex';
+  const barRect = floatToolbar.getBoundingClientRect();
+  let top = rect.top - barRect.height - 10;
+  let left = rect.left + rect.width/2 - barRect.width/2;
+  if(top < 6){ top = rect.bottom + 10; }
+  left = Math.max(6, Math.min(left, window.innerWidth - barRect.width - 6));
+  floatToolbar.style.top = top + 'px';
+  floatToolbar.style.left = left + 'px';
+}
+
+document.addEventListener('selectionchange', ()=>{
+  requestAnimationFrame(updateFloatToolbar);
+});
+window.addEventListener('scroll', ()=>{
+  if(floatToolbar.style.display === 'flex') updateFloatToolbar();
+}, true);
+window.addEventListener('resize', ()=>{
+  if(floatToolbar.style.display === 'flex') updateFloatToolbar();
+});
+document.addEventListener('mousedown', (e)=>{
+  if(!floatToolbar.contains(e.target) && !editor.contains(e.target)){
+    floatToolbar.style.display = 'none';
+  }
+});
+
+floatToolbar.querySelectorAll('button[data-fcmd]').forEach(btn=>{
+  btn.addEventListener('mousedown', e=>e.preventDefault());
+  btn.addEventListener('click', ()=>{
+    document.execCommand(btn.dataset.fcmd, false, null);
+    updateFloatToolbar();
+  });
+});
+
+floatToolbar.querySelectorAll('.dot').forEach(dot=>{
+  dot.addEventListener('mousedown', e=>e.preventDefault());
+  dot.addEventListener('click', ()=>{
+    wrapSelection('color', dot.dataset.fcolor);
+    floatToolbar.style.display = 'none';
+  });
+});
+
+document.getElementById('fMathToggle').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('fMathToggle').addEventListener('click', ()=>{
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement('span');
+  span.className = 'math-run';
+  span.setAttribute('data-math', 'true');
+  try{ range.surroundContents(span); }
+  catch(err){
+    const contents = range.extractContents();
+    span.appendChild(contents);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  floatToolbar.style.display = 'none';
+});
+
+document.getElementById('fClear').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('fClear').addEventListener('click', ()=>{
+  document.execCommand('removeFormat', false, null);
+  floatToolbar.style.display = 'none';
+});
+
+// ---------- DOM -> JSON blocks ----------
+function rgbToHex(rgb){
+  if(!rgb) return null;
+  if(rgb.startsWith('#')) return rgb;
+  const m = rgb.match(/\d+/g);
+  if(!m) return rgb;
+  return '#' + m.slice(0,3).map(n=>parseInt(n).toString(16).padStart(2,'0')).join('');
+}
+
+function styleFromNode(node, inherited){
+  const s = {...inherited};
+  const tag = node.tagName.toLowerCase();
+  if(tag === 'b' || tag === 'strong') s.font_weight = 'bold';
+  if(tag === 'i' || tag === 'em') s.font_style = 'italic';
+  if(tag === 'u') s.text_decoration = 'underline';
+  if(tag === 'strike' || tag === 's' || tag === 'del') s.text_decoration = 'line-through';
+
+  const st = node.style;
+  if(st.fontWeight && (st.fontWeight === 'bold' || parseInt(st.fontWeight) >= 600)) s.font_weight = 'bold';
+  if(st.fontStyle === 'italic') s.font_style = 'italic';
+  const dec = st.textDecorationLine || st.textDecoration;
+  if(dec){
+    if(dec.includes('underline')) s.text_decoration = 'underline';
+    if(dec.includes('line-through')) s.text_decoration = 'line-through';
+  }
+  if(st.color) s.color = rgbToHex(st.color);
+  if(st.backgroundColor) s.background_color = rgbToHex(st.backgroundColor);
+  if(st.fontSize) s.font_size = st.fontSize;
+  return s;
+}
+
+function walk(node, inherited, out){
+  if(node.nodeType === Node.TEXT_NODE){
+    if(node.textContent.length > 0){
+      out.push({type:'text', content: node.textContent, ...inherited});
+    }
+    return;
+  }
+  if(node.nodeType !== Node.ELEMENT_NODE) return;
+
+  const tag = node.tagName.toLowerCase();
+
+  if(tag === 'br'){
+    out.push({type:'text', content: "\n"});
+    return;
+  }
+  if(tag === 'sup'){
+    out.push({type:'math', content: '^{' + node.textContent + '}', ...inherited});
+    return;
+  }
+  if(tag === 'sub'){
+    out.push({type:'math', content: '_{' + node.textContent + '}', ...inherited});
+    return;
+  }
+  if(node.dataset && node.dataset.math === 'true'){
+    out.push({type:'math', content: node.textContent, ...inherited});
+    return;
+  }
+
+  const style = styleFromNode(node, inherited);
+  for(const child of node.childNodes){
+    walk(child, style, out);
+  }
+}
+
+function sameStyle(a, b){
+  const keys = ['font_weight','font_style','text_decoration','color','background_color','font_size'];
+  return keys.every(k => a[k] === b[k]);
+}
+
+function mergeAdjacent(blocks){
+  const merged = [];
+  for(const b of blocks){
+    const last = merged[merged.length - 1];
+    if(last && b.type === 'text' && last.type === 'text' &&
+       b.content !== "\n" && last.content !== "\n" && sameStyle(last, b)){
+      last.content += b.content;
+    } else {
+      merged.push({...b});
+    }
+  }
+  return merged;
+}
+
+function generateJSON(){
+  let blocks = [];
+  for(const child of editor.childNodes){
+    walk(child, {}, blocks);
+  }
+  while(blocks.length && blocks[blocks.length-1].content === "\n"){
+    blocks.pop();
+  }
+  blocks = mergeAdjacent(blocks).map(b=>{
+    const {type, content, ...rest} = b;
+    return {type, content, ...rest};
+  });
+
+  const doc = {
+    title: titleInput.value,
+    subtitle: subtitleInput.value,
+    blocks: blocks
+  };
+
+  const json = JSON.stringify(doc, null, 2);
+  jsonOut.value = json;
+  copyMsg.textContent = "";
+  return json;
+}
+
+document.getElementById('genBtn').addEventListener('click', generateJSON);
+titleInput.addEventListener('input', generateJSON);
+subtitleInput.addEventListener('input', generateJSON);
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  if(!jsonOut.value) generateJSON();
+  jsonOut.select();
+  navigator.clipboard.writeText(jsonOut.value).then(()=>{
+    copyMsg.textContent = "✓ Nusxalandi!";
+    setTimeout(()=>copyMsg.textContent = "", 1800);
+  }).catch(()=>{
+    document.execCommand('copy');
+    copyMsg.textContent = "✓ Nusxalandi!";
+    setTimeout(()=>copyMsg.textContent = "", 1800);
+  });
+});
+
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  if(!jsonOut.value) generateJSON();
+  const blob = new Blob([jsonOut.value], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'manga-text.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+generateJSON();
+</script>
+</body>
+</html>
