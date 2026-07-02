@@ -483,12 +483,22 @@ editor.addEventListener('mouseup', saveSelection);
 editor.addEventListener('keyup', saveSelection);
 
 // ---------- basic format buttons ----------
+// NOTE: we deliberately do NOT use document.execCommand('bold'/'italic'/...)
+// here. execCommand is unreliable in contenteditable: depending on where the
+// selection starts/ends it can re-wrap much more than the selected text
+// (sometimes the whole line), which is why formatting used to "leak" into
+// the rest of the paragraph in the generated JSON. Instead we manually wrap
+// ONLY the selected Range in the matching tag (via wrapSelectionTag below),
+// exactly the same technique already used for color/font-size, so a change
+// only ever touches the exact selected characters.
+const CMD_TAG_MAP = {bold:'b', italic:'i', underline:'u', strikeThrough:'s'};
 document.querySelectorAll('.btn[data-cmd]').forEach(btn=>{
   btn.addEventListener('mousedown', e=>e.preventDefault());
   btn.addEventListener('click', ()=>{
     editor.focus();
-    document.execCommand(btn.dataset.cmd, false, null);
-    saveSelection();
+    restoreSelection();
+    const tag = CMD_TAG_MAP[btn.dataset.cmd];
+    if(tag) wrapSelectionTag(tag);
   });
 });
 
@@ -594,6 +604,28 @@ function wrapSelection(styleProp, value){
   saveSelection();
 }
 
+// Same idea as wrapSelection, but wraps the exact selected Range in a real
+// tag (b/i/u/s/sup/sub) instead of a styled span. Only the selected text
+// is touched — nothing outside the Range is affected.
+function wrapSelectionTag(tagName){
+  restoreSelection();
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const el = document.createElement(tagName);
+  try{ range.surroundContents(el); }
+  catch(err){
+    const contents = range.extractContents();
+    el.appendChild(contents);
+    range.insertNode(el);
+  }
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.selectNodeContents(el);
+  sel.addRange(newRange);
+  saveSelection();
+}
+
 document.getElementById('fontSize').addEventListener('change', (e)=>{
   if(!e.target.value) return;
   editor.focus();
@@ -613,14 +645,12 @@ document.getElementById('bgColor').addEventListener('input', (e)=>{
 document.getElementById('supBtn').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('supBtn').addEventListener('click', ()=>{
   editor.focus(); restoreSelection();
-  document.execCommand('superscript', false, null);
-  saveSelection();
+  wrapSelectionTag('sup');
 });
 document.getElementById('subBtn').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('subBtn').addEventListener('click', ()=>{
   editor.focus(); restoreSelection();
-  document.execCommand('subscript', false, null);
-  saveSelection();
+  wrapSelectionTag('sub');
 });
 
 document.getElementById('mathToggle').addEventListener('mousedown', e=>e.preventDefault());
@@ -711,10 +741,12 @@ document.addEventListener('mousedown', (e)=>{
   }
 });
 
+const FCMD_TAG_MAP = {bold:'b', italic:'i', underline:'u', strikeThrough:'s', superscript:'sup', subscript:'sub'};
 floatToolbar.querySelectorAll('button[data-fcmd]').forEach(btn=>{
   btn.addEventListener('mousedown', e=>e.preventDefault());
   btn.addEventListener('click', ()=>{
-    document.execCommand(btn.dataset.fcmd, false, null);
+    const tag = FCMD_TAG_MAP[btn.dataset.fcmd];
+    if(tag) wrapSelectionTag(tag);
     updateFloatToolbar();
   });
 });
@@ -851,25 +883,21 @@ function extractCellData(cell){
   }
   blocks = mergeAdjacent(blocks);
 
-  const text = blocks.map(b => b.content).join('');
+  // Keep each differently-formatted piece of text as its own run, instead
+  // of collapsing the whole cell into one string + one "winning" style.
+  // That way "Kislorod" (bold) and " text" (plain) in the same cell stay
+  // separate in the JSON instead of the bold leaking onto everything.
+  const runs = blocks.map(b => ({
+    text: b.content,
+    font_weight: b.font_weight,
+    font_style: b.font_style,
+    text_decoration: b.text_decoration,
+    color: b.color,
+    background_color: b.background_color,
+    font_size: b.font_size
+  }));
 
-  const styleKeys = ['font_weight','font_style','text_decoration','color','background_color','font_size'];
-  const style = {};
-  for(const key of styleKeys){
-    for(const b of blocks){
-      if(b[key]){ style[key] = b[key]; break; }
-    }
-  }
-
-  return {
-    text,
-    font_weight: style.font_weight,
-    font_style: style.font_style,
-    text_decoration: style.text_decoration,
-    color: style.color,
-    background_color: style.background_color,
-    font_size: style.font_size
-  };
+  return { runs };
 }
 
 function walk(node, inherited, out){
@@ -946,17 +974,30 @@ function mergeAdjacent(blocks){
   return merged;
 }
 
+// Turns one formatted run from a table cell into {text, font_weight, ...}
+function remapRun(r){
+  const out = {};
+  out[CONFIG.keys.cell_text] = r.text;
+  if(r.font_weight) out[CONFIG.keys.font_weight] = CONFIG.values.bold;
+  if(r.font_style) out[CONFIG.keys.font_style] = CONFIG.values.italic;
+  if(r.text_decoration === 'underline') out[CONFIG.keys.text_decoration] = CONFIG.values.underline;
+  if(r.text_decoration === 'line-through') out[CONFIG.keys.text_decoration] = CONFIG.values.linethrough;
+  if(r.color) out[CONFIG.keys.color] = r.color;
+  if(r.background_color) out[CONFIG.keys.background_color] = r.background_color;
+  if(r.font_size) out[CONFIG.keys.font_size] = r.font_size;
+  return out;
+}
+
+// Cell -> { type:"text", align?, content:[ {text, font_weight, ...}, ... ] }
+// Each differently-formatted piece of the cell's text becomes its own
+// entry in "content", so mixed formatting inside one cell (e.g. a bold
+// word followed by plain text) is preserved instead of collapsing into a
+// single style for the whole cell.
 function remapCell(c, isHeader){
   const out = {};
-  out[CONFIG.keys.cell_text] = c.text;
+  out[CONFIG.keys.type] = CONFIG.values.type_text;
   if(isHeader) out[CONFIG.keys.align] = c.align || 'left';
-  if(c.font_weight) out[CONFIG.keys.font_weight] = CONFIG.values.bold;
-  if(c.font_style) out[CONFIG.keys.font_style] = CONFIG.values.italic;
-  if(c.text_decoration === 'underline') out[CONFIG.keys.text_decoration] = CONFIG.values.underline;
-  if(c.text_decoration === 'line-through') out[CONFIG.keys.text_decoration] = CONFIG.values.linethrough;
-  if(c.color) out[CONFIG.keys.color] = c.color;
-  if(c.background_color) out[CONFIG.keys.background_color] = c.background_color;
-  if(c.font_size) out[CONFIG.keys.font_size] = c.font_size;
+  out[CONFIG.keys.content] = c.runs.map(remapRun);
   return out;
 }
 
