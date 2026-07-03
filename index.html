@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <title>Manga Text → JSON</title>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('manga-json-theme');
+    if(saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
+  }catch(e){}
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
 
@@ -316,6 +324,69 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
   padding:14px 0;
 }
 .coffee-wrap img{display:block;}
+
+/* ---------- dark mode toggle button ---------- */
+.theme-toggle{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:13px;
+  border:2px solid var(--ink);
+  background:#fff;color:var(--ink);
+  border-radius:5px;padding:7px 12px;
+  cursor:pointer;box-shadow:2px 2px 0 var(--ink);
+  margin-top:10px;margin-left:6px;
+  transition:transform .08s ease, background .15s ease, color .15s ease;
+  user-select:none;
+}
+.theme-toggle:hover{background:var(--yellow);}
+.theme-toggle:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink);}
+
+/* ---------- dark theme overrides ---------- */
+html[data-theme="dark"]{
+  --ink:#ececec;
+  --paper:#121212;
+}
+html[data-theme="dark"] body{
+  background-image:radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+}
+html[data-theme="dark"] header p{color:#aaa;}
+html[data-theme="dark"] .panel{background:#1b1b1b;}
+html[data-theme="dark"] .toolbar-label{color:#999;}
+html[data-theme="dark"] .meta label{color:#aaa;}
+html[data-theme="dark"] .meta input,
+html[data-theme="dark"] .cfg-field input,
+html[data-theme="dark"] #tblRows,
+html[data-theme="dark"] #tblCols{
+  background:#242424;color:var(--ink);
+}
+html[data-theme="dark"] .btn,
+html[data-theme="dark"] .theme-toggle{background:#242424;color:var(--ink);}
+html[data-theme="dark"] .btn:hover,
+html[data-theme="dark"] .theme-toggle:hover{background:var(--yellow);color:#171717;}
+html[data-theme="dark"] .btn.red{background:var(--red);color:#fff;}
+html[data-theme="dark"] .btn.blue{background:var(--blue);color:#fff;}
+html[data-theme="dark"] .btn.purple{background:var(--purple);color:#fff;}
+html[data-theme="dark"] .btn.green{background:var(--green);color:#fff;}
+html[data-theme="dark"] input[type=color]{background:#242424;}
+html[data-theme="dark"] #editor{
+  background:repeating-linear-gradient(#1b1b1b, #1b1b1b 31px, #262626 32px);
+}
+html[data-theme="dark"] #editor .math-run{background:#2a2440;}
+html[data-theme="dark"] #editor table.editor-table th{background:#4a4220;}
+html[data-theme="dark"] .float-toolbar{background:#171717;border-color:#171717;}
+html[data-theme="dark"] .hint{color:#aaa;}
+html[data-theme="dark"] .hint code{background:#242424;}
+html[data-theme="dark"] footer{color:#999;}
+html[data-theme="dark"] .modal{background:#1b1b1b;}
+html[data-theme="dark"] .modal .sub{color:#aaa;}
+html[data-theme="dark"] .modal-section-title{color:#999;border-bottom-color:#3a3a3a;}
+html[data-theme="dark"] .cfg-field label{color:#aaa;}
+html[data-theme="dark"] .cfg-field .orig{color:#777;}
+html[data-theme="dark"] .doc-modal p{color:#ccc;}
+html[data-theme="dark"] .doc-modal ul{color:#ccc;}
+html[data-theme="dark"] .doc-modal table.doc-table th{background:#4a4220;}
+html[data-theme="dark"] .doc-modal table.doc-table th,
+html[data-theme="dark"] .doc-modal table.doc-table td{border-color:#3a3a3a;}
+html[data-theme="dark"] .doc-modal code.inline{background:#242424;border-color:#3a3a3a;}
 </style>
 </head>
 <body>
@@ -326,6 +397,7 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
   <p>Sarlavha, kichik sarlavha va formatlangan/matematik bloklardan JSON yig'ing</p>
   <button class="btn wide purple" id="settingsBtn" style="margin-top:10px;">⚙ JSON kalitlarini sozlash</button>
   <button class="btn wide green" id="docBtn" style="margin-top:10px;">📖 Qo'llanma / JSON hujjatlari</button>
+  <button class="theme-toggle" id="themeToggle">🌙 Qorong'i rejim</button>
 </header>
 
 <div class="grid">
@@ -1492,6 +1564,27 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 });
 
 generateJSON();
+
+// ---------- dark mode toggle ----------
+(function(){
+  const themeBtn = document.getElementById('themeToggle');
+  function applyLabel(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeBtn.textContent = isDark ? '☀ Yorug\' rejim' : '🌙 Qorong\'i rejim';
+  }
+  applyLabel();
+  themeBtn.addEventListener('click', ()=>{
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if(isDark){
+      document.documentElement.removeAttribute('data-theme');
+      try{ localStorage.setItem('manga-json-theme','light'); }catch(e){}
+    } else {
+      document.documentElement.setAttribute('data-theme','dark');
+      try{ localStorage.setItem('manga-json-theme','dark'); }catch(e){}
+    }
+    applyLabel();
+  });
+})();
 </script>
 </body>
 </html>
