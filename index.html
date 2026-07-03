@@ -183,6 +183,7 @@ header p{font-size:14px;font-weight:500;color:#444;margin-top:10px;}
 .btn.purple:hover{background:#9b74ff;}
 .btn.green{background:var(--green);color:#fff;}
 .btn.green:hover{background:#2fc46e;}
+.btn.toggle-on{background:var(--blue);color:#fff;box-shadow:inset 0 0 0 2px var(--ink);}
 .btn.sym{width:36px;padding:7px 0;text-align:center;}
 
 select.btn{cursor:pointer;}
@@ -240,6 +241,20 @@ input[type=color]{
   user-select:none;
 }
 #editor .enter-marker:hover{background:#ffd25c;}
+#editor .enter-marker-resolved{
+  display:inline-block;
+  background:#e3f2ff;
+  color:#2f6fed;
+  border:1px solid #b7d6ff;
+  border-radius:4px;
+  padding:0 4px;
+  margin:0 1px;
+  font-size:11px;
+  font-weight:700;
+  cursor:default;
+  user-select:none;
+  vertical-align:1px;
+}
 
 .marker-menu{
   position:fixed;
@@ -553,6 +568,7 @@ html[data-theme="dark"] .pdf-empty-state{color:#999;}
       <button class="btn wide green" id="ulBtn" title="Belgili ro'yxat (bullet list) qo'shish">• Ro'yxat</button>
       <button class="btn wide green" id="olBtn" title="Raqamli ro'yxat qo'shish">1. Ro'yxat</button>
       <button class="btn wide red" id="clearFmt" title="Belgilangan qismning formatini tozalash">Format tozalash</button>
+      <button class="btn wide" id="smartModeToggle" title="Yoqilsa: Format tozalashda Enter'larni o'zi hal qiladi — kichik harfdan davom etsa probel, so'z '-' bilan tugasa qo'shib yuboradi, nuqtadan keyin katta harf bo'lsa qatorni saqlab qoladi.">🧠 Aqlli rejim: O'chiq</button>
       <button class="btn wide red" id="clearAll" title="Butun matnni o'chirish">🗑 Hammasini o'chirish</button>
     </div>
 
@@ -611,7 +627,8 @@ html[data-theme="dark"] .pdf-empty-state{color:#999;}
       <b>Enter</b> — yangi abzas (<code>\n</code>, <code>"type":"text"</code>).<br>
       <b>▦ Jadval:</b> tugmani bosing, qator va ustun sonini kiriting — matn o'rtasiga jadval qo'yiladi. Birinchi qator avtomatik <b>sarlavha (headers)</b> bo'ladi, qolganlari <b>rows</b>. Sarlavha katagida turib ⯇/▭/⯈ tugmalari bilan tekislashni tanlang. Har bir katakchani bold/italic/rang/o'lcham bilan formatlashingiz mumkin — JSON'da <code>"type":"table"</code>, <code>"id"</code>, <code>"headers":[{"text":...,"align":...}]</code> va <code>"rows":[[{"text":...}]]</code> ko'rinishida chiqadi.<br>
       <b>• / 1. Ro'yxat:</b> tugmani bosing — belgili yoki raqamli ro'yxat qo'shiladi. Har bir bandni yozib bo'lgach <b>Enter</b> bosing — yangi band avtomatik qo'shiladi (bo'sh bandda Enter bossangiz ro'yxatdan chiqasiz). Har bir bandni ham bold/italic/rang bilan formatlash mumkin — JSON'da <code>"type":"list"</code>, <code>"ordered":true/false</code> va <code>"items":[{"type":"text","content":[{"text":...}]}]</code> ko'rinishida chiqadi.<br>
-      <b>Format tozalash:</b> belgilangan qismdan bold/rang/o'lcham kabi barcha formatlarni olib tashlaydi. Agar belgilangan qism ichida <b>Enter</b> (qator) bo'lsa, u ham olib tashlanadi (ikki qator qo'shilib bitta bo'ladi), lekin o'sha joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi. <b>Shu belgining ustiga bosing</b> — "␣ Probel qo'yish" (o'rniga bo'sh joy qo'yadi) yoki "🗑 O'chirish" (belgini shunchaki olib tashlaydi) so'raladi. Bir nechta ⏎ belgisi bo'lgan matnni belgilasangiz, tepada chiqadigan suzuvchi panelda "⏎→␣" va "⏎🗑" tugmalari paydo bo'ladi — ular belgilangan qismdagi <b>barcha</b> ⏎ larni birdaniga probelga aylantiradi yoki o'chiradi. Bu belgi faqat tahrirlovchida ko'rinadi, <b>JSON'ga umuman tushmaydi</b>.
+      <b>Format tozalash:</b> belgilangan qismdan bold/rang/o'lcham kabi barcha formatlarni olib tashlaydi. Agar belgilangan qism ichida <b>Enter</b> (qator) bo'lsa, u ham olib tashlanadi (ikki qator qo'shilib bitta bo'ladi), lekin o'sha joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi. <b>Shu belgining ustiga bosing</b> — "␣ Probel qo'yish" (o'rniga bo'sh joy qo'yadi) yoki "🗑 O'chirish" (belgini shunchaki olib tashlaydi) so'raladi. Bir nechta ⏎ belgisi bo'lgan matnni belgilasangiz, tepada chiqadigan suzuvchi panelda "⏎→␣" va "⏎🗑" tugmalari paydo bo'ladi — ular belgilangan qismdagi <b>barcha</b> ⏎ larni birdaniga probelga aylantiradi yoki o'chiradi. Bu belgi faqat tahrirlovchida ko'rinadi, <b>JSON'ga umuman tushmaydi</b>.<br>
+      <b>🧠 Aqlli rejim:</b> yoqilsa, Format tozalashda ⏎ belgilarining bir qismini o'zi hal qiladi, qolganini eskisidek qo'lda hal qilishga qoldiradi: qator <code>-</code> bilan tugagan bo'lsa (masalan <code>Baland-⏎likni</code>) chiziqchani olib tashlab to'g'ridan-to'g'ri qo'shadi ("Balandlikni"); qolgan holatlarda, agar keyingi qism <b>kichik harf</b> bilan boshlansa (masalan <code>moment⏎to moment</code>) probel qo'yib qo'shadi ("moment to moment"). Agar keyingi qism <b>katta harf</b> bilan boshlansa (masalan <code>...pages.⏎In ...</code>) — bu haqiqiy yangi jumla ham, oddiy ism/atama ham bo'lishi mumkin, shuning uchun bunday holat <b>hal qilinmaydi</b> — eskisidek sariq, bosiladigan ⏎ belgisi qoladi, o'zingiz "␣ Probel" yoki "↵ Enter"ni tanlaysiz. Avtomatik hal qilingan joylarga kichik, ko'k <span class="enter-marker-resolved" style="display:inline-block;background:#e3f2ff;color:#2f6fed;border:1px solid #b7d6ff;border-radius:4px;padding:0 4px;font-size:11px;font-weight:700;">↵</span> belgisi qo'yiladi — bu shunchaki izoh, bosish shart emas, JSON'ga tushmaydi. O'chirilgan holatda hammasi avvalgidek — barcha ⏎ lar qo'lda hal qilinadi.
     </div>
   </div>
 
@@ -950,6 +967,89 @@ document.querySelectorAll('.btn[data-cmd]').forEach(btn=>{
   });
 });
 
+// ---------- "Aqlli rejim" (smart mode) ----------
+// When ON, clearSelectionFormatting() doesn't leave every removed Enter as
+// a manual ⏎ marker — it decides automatically based on the text right
+// before/after the break, exactly like a human proofreading a PDF paste:
+//   • line ends with "-"            -> join directly, drop the hyphen
+//     ("Baland-\nlikni"  -> "Balandlikni")
+//   • line ends with . ! ? : ;      -> keep it as a real paragraph break
+//     ("...pages.\nIn ..." -> stays two lines, it's a new sentence)
+//   • anything else (normal word)   -> join with a single space
+//     ("moment\nto moment" -> "moment to moment")
+// Ambiguous cases (nothing usable on one side, e.g. marker touching another
+// marker) are left as a manual ⏎ marker, same as smart mode being off.
+let smartMode = false;
+try{ smartMode = localStorage.getItem('manga-json-smart-mode') === '1'; }catch(e){}
+
+const smartModeBtn = document.getElementById('smartModeToggle');
+function updateSmartModeBtn(){
+  smartModeBtn.textContent = smartMode ? "🧠 Aqlli rejim: Yoniq" : "🧠 Aqlli rejim: O'chiq";
+  smartModeBtn.classList.toggle('toggle-on', smartMode);
+}
+updateSmartModeBtn();
+smartModeBtn.addEventListener('mousedown', e=>e.preventDefault());
+smartModeBtn.addEventListener('click', ()=>{
+  smartMode = !smartMode;
+  try{ localStorage.setItem('manga-json-smart-mode', smartMode ? '1' : '0'); }catch(e){}
+  updateSmartModeBtn();
+});
+
+function decideBreakAction(beforeText, afterText){
+  const before = (beforeText || '').replace(/[ \t]+$/, '');
+  const after = (afterText || '').replace(/^[ \t]+/, '');
+  if(!before || !after) return null; // not enough context -> ask the user
+  // Hyphenated word split across the line break ("Baland-\nlikni") -> join
+  // directly, no space, drop the hyphen.
+  if(before.slice(-1) === '-') return 'hyphen';
+  // Next part continues with a lowercase letter -> it's the same sentence
+  // wrapping onto a new line, just join it with a space.
+  const firstChar = after.slice(0, 1);
+  if(/\p{Ll}/u.test(firstChar)) return 'space';
+  // Anything else (starts with a capital letter, digit, quote, etc.) is
+  // ambiguous — could be a real new sentence/paragraph or just a proper
+  // noun mid-sentence — so leave it exactly like before: a clickable ⏎
+  // marker you resolve yourself (Probel / Enter / O'chirish).
+  return null;
+}
+
+function makeResolvedMarker(tooltip){
+  const span = document.createElement('span');
+  span.className = 'enter-marker-resolved';
+  span.contentEditable = 'false';
+  span.dataset.marker = 'enter'; // still excluded from JSON, like the manual marker
+  span.title = tooltip;
+  span.textContent = '↵';
+  return span;
+}
+
+// Applies the rules above to every enter-marker in `nodes` (the array of
+// DOM nodes clearSelectionFormatting() is about to insert), mutating it
+// in place. Each auto-resolved spot still gets a small, muted "↵" marker
+// left in place — purely visual (never reaches the JSON, never asks for a
+// click) — so you can see exactly where the tool made a decision for you.
+// Ambiguous spots are left exactly as the original clickable ⏎ marker.
+function applySmartMode(nodes){
+  for(let i = 0; i < nodes.length; i++){
+    const n = nodes[i];
+    if(!(n.nodeType === Node.ELEMENT_NODE && n.dataset && n.dataset.marker === 'enter')) continue;
+    const prev = nodes[i - 1];
+    const next = nodes[i + 1];
+    const beforeText = (prev && prev.nodeType === Node.TEXT_NODE) ? prev.textContent : '';
+    const afterText = (next && next.nodeType === Node.TEXT_NODE) ? next.textContent : '';
+    const action = decideBreakAction(beforeText, afterText);
+    if(action === 'hyphen' && prev){
+      prev.textContent = prev.textContent.replace(/-$/, '');
+      nodes[i] = makeResolvedMarker("🧠 Avtomatik: '-' olib tashlab, so'z to'g'ridan-to'g'ri qo'shildi");
+    } else if(action === 'space'){
+      const marker = makeResolvedMarker('🧠 Avtomatik: probel qo\'yib qo\'shildi');
+      nodes.splice(i, 1, marker, document.createTextNode(' '));
+      i++;
+    }
+    // action === null -> leave the ⏎ marker as-is for manual resolution
+  }
+}
+
 // Strips ALL formatting (bold/italic/underline/strike/color/size/sup/sub...)
 // from ONLY the currently selected text, leaving everything outside the
 // selection untouched. We don't use execCommand('removeFormat') because,
@@ -1010,6 +1110,7 @@ function clearSelectionFormatting(){
   }
   walkClean(frag);
   flush();
+  if(smartMode) applySmartMode(nodes);
   if(nodes.length === 0){
     nodes.push(document.createTextNode(''));
   }
