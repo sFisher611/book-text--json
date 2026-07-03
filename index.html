@@ -50,8 +50,65 @@ header h1{
 }
 header p{font-size:14px;font-weight:500;color:#444;margin-top:10px;}
 
-.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;}
-@media (max-width:880px){.grid{grid-template-columns:1fr;}}
+.grid{display:flex;align-items:stretch;gap:0;}
+.grid > .panel:first-child{flex:0 0 55%;min-width:280px;}
+.grid > .right-col{flex:1 1 0%;min-width:280px;}
+@media (max-width:880px){
+  .grid{flex-direction:column;gap:22px;}
+  .grid > .panel:first-child{flex-basis:auto !important;width:100%;}
+}
+
+.grid-resizer{
+  flex:0 0 22px;
+  align-self:stretch;
+  display:flex;align-items:center;justify-content:center;
+  cursor:col-resize;
+  touch-action:none;
+  user-select:none;
+}
+.grid-resizer .handle{
+  width:6px;height:64px;border-radius:4px;
+  background:var(--ink);opacity:.22;
+  transition:opacity .15s ease, background .15s ease;
+}
+.grid-resizer:hover .handle, .grid-resizer.dragging .handle{opacity:.6;background:var(--blue);}
+@media (max-width:880px){.grid-resizer{display:none;}}
+
+.layout-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;}
+.layout-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:#777;margin-right:2px;
+}
+@media (max-width:880px){.layout-toolbar{display:none;}}
+
+.right-col{display:flex;flex-direction:column;gap:22px;}
+
+.pdf-panel .panel-title{justify-content:space-between;flex-wrap:wrap;}
+.pdf-toolbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  margin-bottom:10px;padding-bottom:10px;
+  border-bottom:2px dashed var(--ink);
+}
+.pdf-filename{
+  font-size:12px;font-weight:700;color:#555;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;
+}
+.pdf-dropzone{
+  position:relative;
+  border:2px solid var(--ink);
+  border-radius:5px;
+  height:520px;
+  overflow:hidden;
+  background:#f2f2f2;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s ease, border-color .15s ease;
+}
+.pdf-dropzone.dragover{border-color:var(--blue);background:#e7f0ff;}
+.pdf-empty-state{
+  text-align:center;font-size:13px;color:#777;line-height:1.7;padding:30px 12px;
+}
+.pdf-frame{width:100%;height:100%;border:none;display:block;}
+@media (max-width:880px){.pdf-dropzone{height:420px;}}
 
 .panel{
   background:#fff;
@@ -177,9 +234,39 @@ input[type=color]{
   margin:0 2px;
   font-size:13px;
   font-weight:700;
-  cursor:default;
+  cursor:pointer;
   user-select:none;
 }
+#editor .enter-marker:hover{background:#ffd25c;}
+
+.marker-menu{
+  position:fixed;
+  display:none;
+  flex-direction:column;
+  gap:2px;
+  background:var(--ink);
+  border:2px solid var(--ink);
+  border-radius:8px;
+  padding:6px;
+  box-shadow:4px 4px 0 rgba(0,0,0,0.35);
+  z-index:1000;
+}
+.marker-menu.show{display:flex;}
+.marker-menu button{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:13px;
+  border:none;
+  background:#2a2a2a;
+  color:#fff;
+  border-radius:5px;
+  padding:7px 12px;
+  cursor:pointer;
+  line-height:1;
+  text-align:left;
+  white-space:nowrap;
+}
+.marker-menu button:hover{background:var(--yellow);color:var(--ink);}
+.marker-menu button.danger-mb:hover{background:var(--red);color:#fff;}
 
 .actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 
@@ -373,6 +460,7 @@ html[data-theme="dark"] #editor{
 html[data-theme="dark"] #editor .math-run{background:#2a2440;}
 html[data-theme="dark"] #editor table.editor-table th{background:#4a4220;}
 html[data-theme="dark"] .float-toolbar{background:#171717;border-color:#171717;}
+html[data-theme="dark"] .marker-menu{background:#171717;border-color:#171717;}
 html[data-theme="dark"] .hint{color:#aaa;}
 html[data-theme="dark"] .hint code{background:#242424;}
 html[data-theme="dark"] footer{color:#999;}
@@ -387,6 +475,11 @@ html[data-theme="dark"] .doc-modal table.doc-table th{background:#4a4220;}
 html[data-theme="dark"] .doc-modal table.doc-table th,
 html[data-theme="dark"] .doc-modal table.doc-table td{border-color:#3a3a3a;}
 html[data-theme="dark"] .doc-modal code.inline{background:#242424;border-color:#3a3a3a;}
+html[data-theme="dark"] .pdf-filename{color:#aaa;}
+html[data-theme="dark"] .layout-label{color:#999;}
+html[data-theme="dark"] .pdf-dropzone{background:#161616;}
+html[data-theme="dark"] .pdf-dropzone.dragover{background:#1a2333;}
+html[data-theme="dark"] .pdf-empty-state{color:#999;}
 </style>
 </head>
 <body>
@@ -399,6 +492,13 @@ html[data-theme="dark"] .doc-modal code.inline{background:#242424;border-color:#
   <button class="btn wide green" id="docBtn" style="margin-top:10px;">📖 Qo'llanma / JSON hujjatlari</button>
   <button class="theme-toggle" id="themeToggle">🌙 Qorong'i rejim</button>
 </header>
+
+<div class="layout-toolbar">
+  <span class="layout-label">Ko'rinish:</span>
+  <button class="btn wide" id="layoutEditorBig" title="Matn muharririga ko'proq joy">🖉 Matn kattaroq</button>
+  <button class="btn wide" id="layoutEqual" title="Ikkalasini teng qilish (solishtirish uchun qulay)">⚖ Teng</button>
+  <button class="btn wide" id="layoutPdfBig" title="PDF ko'rinishiga ko'proq joy">📄 PDF kattaroq</button>
+</div>
 
 <div class="grid">
 
@@ -490,6 +590,16 @@ html[data-theme="dark"] .doc-modal code.inline{background:#242424;border-color:#
       <div class="sep"></div>
       <button id="fClear" title="Belgilangan qismning formatini tozalash">✕</button>
       <button id="fDelete" title="Belgilangan matnni butunlay o'chirish">🗑</button>
+      <div class="sep" id="fMarkerSep" style="display:none;"></div>
+      <button id="fMarkerSpace" style="display:none;" title="Belgilangan qismdagi barcha ⏎ belgilarni probelga aylantirish">⏎→␣</button>
+      <button id="fMarkerDelete" style="display:none;" title="Belgilangan qismdagi barcha ⏎ belgilarni o'chirish">⏎🗑</button>
+      <button id="fMarkerEnter" style="display:none;" title="Belgilangan qismdagi barcha ⏎ belgilarni qayta Enter qilib qo'yish">⏎↵</button>
+    </div>
+
+    <div class="marker-menu" id="markerMenu">
+      <button id="markerSpaceBtn">␣ Probel qo'yish</button>
+      <button id="markerEnterBtn">↵ Enter qo'yish</button>
+      <button id="markerDeleteBtn" class="danger-mb">🗑 O'chirish</button>
     </div>
 
     <div class="hint">
@@ -499,19 +609,50 @@ html[data-theme="dark"] .doc-modal code.inline{background:#242424;border-color:#
       <b>Enter</b> — yangi abzas (<code>\n</code>, <code>"type":"text"</code>).<br>
       <b>▦ Jadval:</b> tugmani bosing, qator va ustun sonini kiriting — matn o'rtasiga jadval qo'yiladi. Birinchi qator avtomatik <b>sarlavha (headers)</b> bo'ladi, qolganlari <b>rows</b>. Sarlavha katagida turib ⯇/▭/⯈ tugmalari bilan tekislashni tanlang. Har bir katakchani bold/italic/rang/o'lcham bilan formatlashingiz mumkin — JSON'da <code>"type":"table"</code>, <code>"id"</code>, <code>"headers":[{"text":...,"align":...}]</code> va <code>"rows":[[{"text":...}]]</code> ko'rinishida chiqadi.<br>
       <b>• / 1. Ro'yxat:</b> tugmani bosing — belgili yoki raqamli ro'yxat qo'shiladi. Har bir bandni yozib bo'lgach <b>Enter</b> bosing — yangi band avtomatik qo'shiladi (bo'sh bandda Enter bossangiz ro'yxatdan chiqasiz). Har bir bandni ham bold/italic/rang bilan formatlash mumkin — JSON'da <code>"type":"list"</code>, <code>"ordered":true/false</code> va <code>"items":[{"type":"text","content":[{"text":...}]}]</code> ko'rinishida chiqadi.<br>
-      <b>Format tozalash:</b> belgilangan qismdan bold/rang/o'lcham kabi barcha formatlarni olib tashlaydi. Agar belgilangan qism ichida <b>Enter</b> (qator) bo'lsa, u ham olib tashlanadi (ikki qator qo'shilib bitta bo'ladi), lekin o'sha joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi — shu belgi orqali qayerda Enter olib tashlanganini topib, kerak bo'lsa qo'lda tuzatasiz (belgini belgilab o'chirib, joyiga qayta Enter bosishingiz mumkin). Bu belgi faqat tahrirlovchida ko'rinadi, <b>JSON'ga umuman tushmaydi</b>.
+      <b>Format tozalash:</b> belgilangan qismdan bold/rang/o'lcham kabi barcha formatlarni olib tashlaydi. Agar belgilangan qism ichida <b>Enter</b> (qator) bo'lsa, u ham olib tashlanadi (ikki qator qo'shilib bitta bo'ladi), lekin o'sha joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi. <b>Shu belgining ustiga bosing</b> — "␣ Probel qo'yish" (o'rniga bo'sh joy qo'yadi) yoki "🗑 O'chirish" (belgini shunchaki olib tashlaydi) so'raladi. Bir nechta ⏎ belgisi bo'lgan matnni belgilasangiz, tepada chiqadigan suzuvchi panelda "⏎→␣" va "⏎🗑" tugmalari paydo bo'ladi — ular belgilangan qismdagi <b>barcha</b> ⏎ larni birdaniga probelga aylantiradi yoki o'chiradi. Bu belgi faqat tahrirlovchida ko'rinadi, <b>JSON'ga umuman tushmaydi</b>.
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-title">{ } Natija <span class="tag">JSON</span></div>
-    <textarea id="jsonOut" readonly placeholder="JSON shu yerda chiqadi..."></textarea>
-    <div class="actions">
-      <button class="btn blue wide" id="genBtn">⚡ JSON yaratish</button>
-      <button class="btn wide" id="copyBtn">⧉ Nusxalash</button>
-      <button class="btn wide" id="downloadBtn">⇩ Yuklab olish</button>
+  <div class="grid-resizer" id="gridResizer" title="Sudrab o'lchamini o'zgartiring (ikki marta bosish — tenglashtirish)">
+    <div class="handle"></div>
+  </div>
+
+  <div class="right-col">
+
+    <div class="panel pdf-panel">
+      <div class="panel-title">📄 PDF <span class="tag">VIEWER</span>
+        <button class="btn wide" id="toggleJsonBtn" style="margin-left:auto;">{ } JSON ko'rsatish</button>
+      </div>
+
+      <div class="pdf-toolbar">
+        <button class="btn wide blue" id="pdfOpenBtn">📂 PDF ochish</button>
+        <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none;">
+        <span class="pdf-filename" id="pdfFileName"></span>
+        <button class="btn wide red" id="pdfCloseBtn" style="display:none;margin-left:auto;">✕ Yopish</button>
+      </div>
+
+      <div class="pdf-dropzone" id="pdfDropzone">
+        <iframe id="pdfFrame" class="pdf-frame" style="display:none;" title="PDF ko'rish"></iframe>
+        <div class="pdf-empty-state" id="pdfEmptyState">
+          📄 PDF faylni shu yerga tashlang<br>yoki yuqoridagi "PDF ochish" tugmasini bosing<br>
+          <span style="font-size:11px;">(brauzeringizning o'z PDF ko'ruvchisida ochiladi — sahifalar, kattalashtirish, qidiruv hammasi tayyor)</span>
+        </div>
+      </div>
+
+      <div class="hint">PDF ichidagi matnni sichqoncha bilan belgilab <b>Ctrl+C</b> bilan nusxalang, so'ng chapdagi muharrirga <b>Ctrl+V</b> bilan joylashtiring — boshqa oyna ochish shart emas.</div>
     </div>
-    <div class="hint" id="copyMsg" style="min-height:16px;color:var(--green);font-weight:700;"></div>
+
+    <div class="panel" id="jsonPanel" style="display:none;">
+      <div class="panel-title">{ } Natija <span class="tag">JSON</span></div>
+      <textarea id="jsonOut" readonly placeholder="JSON shu yerda chiqadi..."></textarea>
+      <div class="actions">
+        <button class="btn blue wide" id="genBtn">⚡ JSON yaratish</button>
+        <button class="btn wide" id="copyBtn">⧉ Nusxalash</button>
+        <button class="btn wide" id="downloadBtn">⇩ Yuklab olish</button>
+      </div>
+      <div class="hint" id="copyMsg" style="min-height:16px;color:var(--green);font-weight:700;"></div>
+    </div>
+
   </div>
 
 </div>
@@ -742,7 +883,7 @@ html[data-theme="dark"] .doc-modal code.inline{background:#242424;border-color:#
       <li><b>▦ Jadval</b> — qator/ustun sonini so'rab, jadval qo'shadi.</li>
       <li><b>• Ro'yxat / 1. Ro'yxat</b> — belgili yoki raqamli ro'yxat qo'shadi. Bandni yozib Enter bossangiz, yangi band avtomatik ochiladi.</li>
       <li><b>x² / x₂ / 𝑓(x) Math</b> — belgilangan qismni daraja/indeks yoki to'liq matematik blok qiladi.</li>
-      <li><b>Format tozalash</b> — belgilangan qismdan barcha formatni (va agar bo'lsa, ichidagi Enter'ni ham) tozalaydi. Enter olib tashlangan joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi (faqat tahrirlovchida ko'rinadi, JSON'ga tushmaydi) — shu orqali qayerda Enter olib tashlanganini topib, kerak bo'lsa qo'lda tuzatasiz.</li>
+      <li><b>Format tozalash</b> — belgilangan qismdan barcha formatni (va agar bo'lsa, ichidagi Enter'ni ham) tozalaydi. Enter olib tashlangan joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi (faqat tahrirlovchida ko'rinadi, JSON'ga tushmaydi). Belgining ustiga bosib "probel qo'yish" yoki "o'chirish"ni tanlashingiz mumkin; bir nechta ⏎ ni birdaniga hal qilish uchun ularni ham qamrab oladigan qilib matn belgilang — suzuvchi panelda "⏎→␣" / "⏎🗑" tugmalari chiqadi.</li>
       <li><b>🗑 Hammasini o'chirish</b> — butun matnni (jadval, ro'yxat bilan birga) o'chiradi, tasdiqlash so'raydi.</li>
       <li><b>Suzuvchi panel</b> — matn belgilaganingizda tepada chiqadi, bir xil tugmalarning kichraytirilgan varianti, shu jumladan ✕ (format tozalash) va 🗑 (belgilangan matnni butunlay o'chirish).</li>
     </ul>
@@ -1146,6 +1287,37 @@ document.querySelectorAll('.btn.sym').forEach(btn=>{
 
 // ---------- floating selection toolbar ----------
 const floatToolbar = document.getElementById('floatToolbar');
+const fMarkerSep = document.getElementById('fMarkerSep');
+const fMarkerSpace = document.getElementById('fMarkerSpace');
+const fMarkerDelete = document.getElementById('fMarkerDelete');
+const fMarkerEnter = document.getElementById('fMarkerEnter');
+
+// Finds every "⏎ Enter olib tashlandi" marker that the current selection
+// range touches (fully or partially), so the floating toolbar can offer a
+// bulk action on all of them at once.
+function getMarkersInRange(range){
+  return Array.from(editor.querySelectorAll('.enter-marker')).filter(m => range.intersectsNode(m));
+}
+
+// Turns a list of marker spans into either a real space character (so it
+// shows up in the generated JSON), an actual Enter/line-break (undoing the
+// removal — same <br class="p-break"> the ¶ Abzas button inserts), or just
+// removes them outright (pure cleanup, same as before — markers never reach
+// the JSON anyway).
+function resolveMarkers(markers, mode){
+  markers.forEach(m=>{
+    if(mode === 'space'){
+      m.replaceWith(document.createTextNode(' '));
+    } else if(mode === 'enter'){
+      const br = document.createElement('br');
+      br.className = 'p-break';
+      m.replaceWith(br);
+    } else {
+      m.remove();
+    }
+  });
+  generateJSON();
+}
 
 function updateFloatToolbar(){
   const sel = window.getSelection();
@@ -1159,6 +1331,13 @@ function updateFloatToolbar(){
     floatToolbar.style.display = 'none';
     return;
   }
+  const markersHere = getMarkersInRange(range);
+  const showMarkerGroup = markersHere.length > 0 ? 'inline-block' : 'none';
+  fMarkerSep.style.display = markersHere.length > 0 ? 'block' : 'none';
+  fMarkerSpace.style.display = showMarkerGroup;
+  fMarkerDelete.style.display = showMarkerGroup;
+  fMarkerEnter.style.display = showMarkerGroup;
+
   floatToolbar.style.display = 'flex';
   const barRect = floatToolbar.getBoundingClientRect();
   let top = rect.top - barRect.height - 10;
@@ -1230,6 +1409,80 @@ document.getElementById('fDelete').addEventListener('mousedown', e=>e.preventDef
 document.getElementById('fDelete').addEventListener('click', ()=>{
   deleteSelectionText();
   floatToolbar.style.display = 'none';
+});
+
+fMarkerSpace.addEventListener('mousedown', e=>e.preventDefault());
+fMarkerSpace.addEventListener('click', ()=>{
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return;
+  resolveMarkers(getMarkersInRange(sel.getRangeAt(0)), 'space');
+  floatToolbar.style.display = 'none';
+});
+
+fMarkerDelete.addEventListener('mousedown', e=>e.preventDefault());
+fMarkerDelete.addEventListener('click', ()=>{
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return;
+  resolveMarkers(getMarkersInRange(sel.getRangeAt(0)), 'delete');
+  floatToolbar.style.display = 'none';
+});
+
+fMarkerEnter.addEventListener('mousedown', e=>e.preventDefault());
+fMarkerEnter.addEventListener('click', ()=>{
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return;
+  resolveMarkers(getMarkersInRange(sel.getRangeAt(0)), 'enter');
+  floatToolbar.style.display = 'none';
+});
+
+// ---------- click a single ⏎ marker: ask "space" or "delete" ----------
+const markerMenu = document.getElementById('markerMenu');
+let activeMarker = null;
+
+function hideMarkerMenu(){
+  markerMenu.classList.remove('show');
+  activeMarker = null;
+}
+
+editor.addEventListener('click', (e)=>{
+  const marker = e.target.closest('.enter-marker');
+  if(!marker){ return; }
+  e.preventDefault();
+  activeMarker = marker;
+  floatToolbar.style.display = 'none';
+  const rect = marker.getBoundingClientRect();
+  markerMenu.classList.add('show');
+  const menuRect = markerMenu.getBoundingClientRect();
+  let top = rect.bottom + 8;
+  let left = rect.left + rect.width/2 - menuRect.width/2;
+  if(top + menuRect.height > window.innerHeight - 6){ top = rect.top - menuRect.height - 8; }
+  left = Math.max(6, Math.min(left, window.innerWidth - menuRect.width - 6));
+  markerMenu.style.top = top + 'px';
+  markerMenu.style.left = left + 'px';
+});
+
+document.getElementById('markerSpaceBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('markerSpaceBtn').addEventListener('click', ()=>{
+  if(activeMarker) resolveMarkers([activeMarker], 'space');
+  hideMarkerMenu();
+});
+
+document.getElementById('markerEnterBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('markerEnterBtn').addEventListener('click', ()=>{
+  if(activeMarker) resolveMarkers([activeMarker], 'enter');
+  hideMarkerMenu();
+});
+
+document.getElementById('markerDeleteBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('markerDeleteBtn').addEventListener('click', ()=>{
+  if(activeMarker) resolveMarkers([activeMarker], 'delete');
+  hideMarkerMenu();
+});
+
+document.addEventListener('mousedown', (e)=>{
+  if(!markerMenu.contains(e.target) && e.target.closest('.enter-marker') === null){
+    hideMarkerMenu();
+  }
 });
 
 // ---------- configurable JSON keys/values ----------
@@ -1564,6 +1817,131 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 });
 
 generateJSON();
+
+// ---------- JSON panel show/hide toggle ----------
+(function(){
+  const toggleBtn = document.getElementById('toggleJsonBtn');
+  const jsonPanel = document.getElementById('jsonPanel');
+  toggleBtn.addEventListener('click', ()=>{
+    const showing = jsonPanel.style.display !== 'none';
+    jsonPanel.style.display = showing ? 'none' : 'block';
+    toggleBtn.textContent = showing ? "{ } JSON ko'rsatish" : "{ } JSON yashirish";
+    if(!showing) generateJSON();
+  });
+})();
+
+// ---------- PDF viewer (uses the browser's own built-in PDF viewer via
+// an iframe + object URL — no external library, no network dependency,
+// full native page navigation/zoom/search/text-selection for free) ----------
+(function(){
+  const dropzone = document.getElementById('pdfDropzone');
+  const emptyState = document.getElementById('pdfEmptyState');
+  const frame = document.getElementById('pdfFrame');
+  const openBtn = document.getElementById('pdfOpenBtn');
+  const fileInput = document.getElementById('pdfFileInput');
+  const closeBtn = document.getElementById('pdfCloseBtn');
+  const fileNameLabel = document.getElementById('pdfFileName');
+
+  let currentObjectUrl = null;
+
+  function loadPdf(file){
+    if(currentObjectUrl){ URL.revokeObjectURL(currentObjectUrl); }
+    currentObjectUrl = URL.createObjectURL(file);
+    frame.src = currentObjectUrl;
+    frame.style.display = 'block';
+    emptyState.style.display = 'none';
+    closeBtn.style.display = 'inline-block';
+    fileNameLabel.textContent = file.name;
+  }
+
+  function closePdf(){
+    frame.src = 'about:blank';
+    frame.style.display = 'none';
+    emptyState.style.display = 'block';
+    closeBtn.style.display = 'none';
+    fileNameLabel.textContent = '';
+    if(currentObjectUrl){ URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+    fileInput.value = '';
+  }
+
+  openBtn.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', ()=>{
+    if(fileInput.files[0]) loadPdf(fileInput.files[0]);
+  });
+  closeBtn.addEventListener('click', closePdf);
+
+  ['dragover','dragenter'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+    });
+  });
+  dropzone.addEventListener('drop', e=>{
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(!file) return;
+    if(file.type === 'application/pdf'){ loadPdf(file); }
+    else{ alert("Iltimos, faqat PDF fayl tashlang."); }
+  });
+})();
+
+// ---------- resizable editor / PDF-JSON split ----------
+// Lets you drag the divider so the editor or the PDF viewer gets more
+// room, or set them equal for side-by-side comparison. The chosen split
+// is remembered between visits.
+(function(){
+  const grid = document.querySelector('.grid');
+  const leftPanel = grid.querySelector(':scope > .panel');
+  const resizer = document.getElementById('gridResizer');
+  const STORAGE_KEY = 'manga-json-split';
+  const RESIZER_PX = 22;
+
+  function applyPercent(pct){
+    pct = Math.max(25, Math.min(75, pct));
+    leftPanel.style.flex = `0 0 ${pct}%`;
+  }
+  function applyAndSave(pct){
+    applyPercent(pct);
+    try{ localStorage.setItem(STORAGE_KEY, String(pct)); }catch(e){}
+  }
+
+  let saved = null;
+  try{ saved = parseFloat(localStorage.getItem(STORAGE_KEY)); }catch(e){}
+  applyPercent(isNaN(saved) ? 54 : saved);
+
+  let dragging = false;
+  resizer.addEventListener('pointerdown', (e)=>{
+    dragging = true;
+    resizer.classList.add('dragging');
+    resizer.setPointerCapture(e.pointerId);
+  });
+  resizer.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const rect = grid.getBoundingClientRect();
+    const usable = rect.width - RESIZER_PX;
+    const pct = (e.clientX - rect.left) / usable * 100;
+    applyPercent(pct);
+  });
+  function stopDrag(e){
+    if(!dragging) return;
+    dragging = false;
+    resizer.classList.remove('dragging');
+    const m = leftPanel.style.flex.match(/([\d.]+)%/);
+    if(m) applyAndSave(parseFloat(m[1]));
+  }
+  resizer.addEventListener('pointerup', stopDrag);
+  resizer.addEventListener('pointercancel', stopDrag);
+  resizer.addEventListener('dblclick', ()=> applyAndSave(50));
+
+  document.getElementById('layoutEditorBig').addEventListener('click', ()=> applyAndSave(68));
+  document.getElementById('layoutEqual').addEventListener('click', ()=> applyAndSave(50));
+  document.getElementById('layoutPdfBig').addEventListener('click', ()=> applyAndSave(32));
+})();
 
 // ---------- dark mode toggle ----------
 (function(){
