@@ -502,10 +502,49 @@ document.querySelectorAll('.btn[data-cmd]').forEach(btn=>{
   });
 });
 
+// Strips ALL formatting (bold/italic/underline/strike/color/size/sup/sub...)
+// from ONLY the currently selected text, leaving everything outside the
+// selection untouched. We don't use execCommand('removeFormat') because,
+// just like with bold/italic, it can behave inconsistently across browsers
+// and doesn't reliably clean up the custom tags/spans this editor inserts.
+function clearSelectionFormatting(){
+  restoreSelection();
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const frag = range.extractContents();
+
+  function plainTextOf(node){
+    let text = '';
+    node.childNodes.forEach(child=>{
+      if(child.nodeType === Node.TEXT_NODE){
+        text += child.textContent;
+      } else if(child.nodeType === Node.ELEMENT_NODE){
+        if(child.tagName === 'BR'){
+          text += '\n';
+        } else {
+          text += plainTextOf(child);
+        }
+      }
+    });
+    return text;
+  }
+
+  const plain = plainTextOf(frag);
+  const textNode = document.createTextNode(plain);
+  range.insertNode(textNode);
+
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.selectNodeContents(textNode);
+  sel.addRange(newRange);
+  saveSelection();
+}
+
 document.getElementById('clearFmt').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('clearFmt').addEventListener('click', ()=>{
   editor.focus();
-  document.execCommand('removeFormat', false, null);
+  clearSelectionFormatting();
 });
 
 document.getElementById('paraBtn').addEventListener('mousedown', e=>e.preventDefault());
@@ -779,7 +818,7 @@ document.getElementById('fMathToggle').addEventListener('click', ()=>{
 
 document.getElementById('fClear').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('fClear').addEventListener('click', ()=>{
-  document.execCommand('removeFormat', false, null);
+  clearSelectionFormatting();
   floatToolbar.style.display = 'none';
 });
 
