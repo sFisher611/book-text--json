@@ -332,7 +332,8 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <button class="btn wide green" id="tableBtn" title="Jadval qo'shish">▦ Jadval</button>
       <button class="btn wide green" id="ulBtn" title="Belgili ro'yxat (bullet list) qo'shish">• Ro'yxat</button>
       <button class="btn wide green" id="olBtn" title="Raqamli ro'yxat qo'shish">1. Ro'yxat</button>
-      <button class="btn wide red" id="clearFmt" title="Formatni tozalash">Tozalash</button>
+      <button class="btn wide red" id="clearFmt" title="Belgilangan qismning formatini tozalash">Format tozalash</button>
+      <button class="btn wide red" id="clearAll" title="Butun matnni o'chirish">🗑 Hammasini o'chirish</button>
     </div>
 
     <div class="toolbar math">
@@ -369,7 +370,8 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <button class="dot" data-fcolor="#1f9d55" style="background:#1f9d55"></button>
       <button class="dot" data-fcolor="#171717" style="background:#171717"></button>
       <div class="sep"></div>
-      <button id="fClear" title="Tozalash">✕</button>
+      <button id="fClear" title="Belgilangan qismning formatini tozalash">✕</button>
+      <button id="fDelete" title="Belgilangan matnni butunlay o'chirish">🗑</button>
     </div>
 
     <div class="hint">
@@ -522,6 +524,13 @@ document.querySelectorAll('.btn[data-cmd]').forEach(btn=>{
 // selection untouched. We don't use execCommand('removeFormat') because,
 // just like with bold/italic, it can behave inconsistently across browsers
 // and doesn't reliably clean up the custom tags/spans this editor inserts.
+//
+// IMPORTANT: paragraph breaks (<br class="p-break">) inside the selection
+// are kept as real <br> elements, NOT merged into the plain text as "\n"
+// characters. If they get embedded inside one big text node instead, the
+// editor's own Enter-position tracking gets confused — new text you type
+// afterwards can end up jumping to the wrong paragraph. Keeping each <br>
+// as its own node keeps every paragraph boundary exactly where it was.
 function clearSelectionFormatting(){
   restoreSelection();
   const sel = window.getSelection();
@@ -529,37 +538,73 @@ function clearSelectionFormatting(){
   const range = sel.getRangeAt(0);
   const frag = range.extractContents();
 
-  function plainTextOf(node){
-    let text = '';
+  const nodes = [];
+  let buffer = '';
+  function flush(){
+    if(buffer.length){ nodes.push(document.createTextNode(buffer)); buffer = ''; }
+  }
+  function walkClean(node){
     node.childNodes.forEach(child=>{
       if(child.nodeType === Node.TEXT_NODE){
-        text += child.textContent;
+        buffer += child.textContent;
       } else if(child.nodeType === Node.ELEMENT_NODE){
         if(child.tagName === 'BR'){
-          text += '\n';
+          flush();
+          const br = document.createElement('br');
+          br.className = 'p-break';
+          nodes.push(br);
         } else {
-          text += plainTextOf(child);
+          walkClean(child);
         }
       }
     });
-    return text;
+  }
+  walkClean(frag);
+  flush();
+  if(nodes.length === 0){
+    nodes.push(document.createTextNode(''));
   }
 
-  const plain = plainTextOf(frag);
-  const textNode = document.createTextNode(plain);
-  range.insertNode(textNode);
+  const cleanFrag = document.createDocumentFragment();
+  nodes.forEach(n => cleanFrag.appendChild(n));
+  range.insertNode(cleanFrag);
 
   sel.removeAllRanges();
   const newRange = document.createRange();
-  newRange.selectNodeContents(textNode);
+  newRange.setStartBefore(nodes[0]);
+  newRange.setEndAfter(nodes[nodes.length - 1]);
   sel.addRange(newRange);
   saveSelection();
+}
+
+// Deletes the currently selected text entirely (unlike clearSelectionFormatting,
+// which only strips styling but keeps the text).
+function deleteSelectionText(){
+  restoreSelection();
+  const sel = window.getSelection();
+  if(!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  saveSelection();
+  generateJSON();
 }
 
 document.getElementById('clearFmt').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('clearFmt').addEventListener('click', ()=>{
   editor.focus();
   clearSelectionFormatting();
+});
+
+document.getElementById('clearAll').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('clearAll').addEventListener('click', ()=>{
+  if(!editor.textContent.trim() && editor.querySelectorAll('table,ul,ol').length === 0) return;
+  if(!confirm("Butun matn o'chirilsin-mi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
+  editor.innerHTML = '';
+  savedRange = null;
+  editor.focus();
+  generateJSON();
 });
 
 document.getElementById('paraBtn').addEventListener('mousedown', e=>e.preventDefault());
@@ -866,6 +911,12 @@ document.getElementById('fClear').addEventListener('click', ()=>{
   floatToolbar.style.display = 'none';
 });
 
+document.getElementById('fDelete').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('fDelete').addEventListener('click', ()=>{
+  deleteSelectionText();
+  floatToolbar.style.display = 'none';
+});
+
 // ---------- configurable JSON keys/values ----------
 const DEFAULT_CONFIG = {
   keys: {
@@ -1145,6 +1196,10 @@ function generateJSON(){
   const json = JSON.stringify(doc, null, 2);
   jsonOut.value = json;
   copyMsg.textContent = "";
+  // Grow the JSON box to fit its content so long JSON (lots of blocks,
+  // list items, table rows...) is visible without needing to scroll.
+  jsonOut.style.height = 'auto';
+  jsonOut.style.height = Math.max(360, jsonOut.scrollHeight + 4) + 'px';
   return json;
 }
 
@@ -1178,7 +1233,5 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 
 generateJSON();
 </script>
-
-  
 </body>
 </html>
