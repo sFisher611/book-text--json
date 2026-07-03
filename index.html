@@ -150,6 +150,15 @@ input[type=color]{
 #editor table.editor-table td:focus, #editor table.editor-table th:focus{
   outline:2px solid var(--blue);outline-offset:-2px;
 }
+#editor ul.editor-list, #editor ol.editor-list{
+  margin:10px 0; padding-left:28px;
+}
+#editor ul.editor-list li, #editor ol.editor-list li{
+  margin:4px 0; padding-left:2px;
+}
+#editor ul.editor-list li:focus, #editor ol.editor-list li:focus{
+  outline:2px solid var(--blue); outline-offset:2px; border-radius:2px;
+}
 
 .actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 
@@ -321,6 +330,8 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <button class="btn wide" data-cmd="justifyCenter" title="Markazga tekislash (jadval sarlavhasi uchun)">▭ Markaz</button>
       <button class="btn wide" data-cmd="justifyRight" title="O'ngga tekislash (jadval sarlavhasi uchun)">⯈ O'ng</button>
       <button class="btn wide green" id="tableBtn" title="Jadval qo'shish">▦ Jadval</button>
+      <button class="btn wide green" id="ulBtn" title="Belgili ro'yxat (bullet list) qo'shish">• Ro'yxat</button>
+      <button class="btn wide green" id="olBtn" title="Raqamli ro'yxat qo'shish">1. Ro'yxat</button>
       <button class="btn wide red" id="clearFmt" title="Formatni tozalash">Tozalash</button>
     </div>
 
@@ -366,7 +377,8 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <b>H2O misoli:</b> "H2O" deb yozing, "2" raqamini belgilab <b>x₂</b> tugmasini bosing — u indeksga aylanadi va JSON'da avtomatik <code>"type":"math"</code> bo'lib chiqadi, qolgan "H" va "O" esa oddiy <code>"type":"text"</code> bo'lib qoladi.<br>
       <b>Integral / formula misoli:</b> "∫ x dx = x²/2 + C" deb yozib, hammasini belgilang va <b>𝑓(x) Math</b> tugmasini bosing — butun ifoda bitta <code>"type":"math"</code> blok bo'ladi.<br>
       <b>Enter</b> — yangi abzas (<code>\n</code>, <code>"type":"text"</code>).<br>
-      <b>▦ Jadval:</b> tugmani bosing, qator va ustun sonini kiriting — matn o'rtasiga jadval qo'yiladi. Birinchi qator avtomatik <b>sarlavha (headers)</b> bo'ladi, qolganlari <b>rows</b>. Sarlavha katagida turib ⯇/▭/⯈ tugmalari bilan tekislashni tanlang. Har bir katakchani bold/italic/rang/o'lcham bilan formatlashingiz mumkin — JSON'da <code>"type":"table"</code>, <code>"id"</code>, <code>"headers":[{"text":...,"align":...}]</code> va <code>"rows":[[{"text":...}]]</code> ko'rinishida chiqadi.
+      <b>▦ Jadval:</b> tugmani bosing, qator va ustun sonini kiriting — matn o'rtasiga jadval qo'yiladi. Birinchi qator avtomatik <b>sarlavha (headers)</b> bo'ladi, qolganlari <b>rows</b>. Sarlavha katagida turib ⯇/▭/⯈ tugmalari bilan tekislashni tanlang. Har bir katakchani bold/italic/rang/o'lcham bilan formatlashingiz mumkin — JSON'da <code>"type":"table"</code>, <code>"id"</code>, <code>"headers":[{"text":...,"align":...}]</code> va <code>"rows":[[{"text":...}]]</code> ko'rinishida chiqadi.<br>
+      <b>• / 1. Ro'yxat:</b> tugmani bosing — belgili yoki raqamli ro'yxat qo'shiladi. Har bir bandni yozib bo'lgach <b>Enter</b> bosing — yangi band avtomatik qo'shiladi (bo'sh bandda Enter bossangiz ro'yxatdan chiqasiz). Har bir bandni ham bold/italic/rang bilan formatlash mumkin — JSON'da <code>"type":"list"</code>, <code>"ordered":true/false</code> va <code>"items":[{"type":"text","content":[{"text":...}]}]</code> ko'rinishida chiqadi.
     </div>
   </div>
 
@@ -425,6 +437,8 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <div class="cfg-field"><label>rows <span class="orig">(jadval qatorlari kaliti)</span></label><input data-cfgkey="rows" placeholder="rows"></div>
       <div class="cfg-field"><label>align <span class="orig">(sarlavha tekislash kaliti)</span></label><input data-cfgkey="align" placeholder="align"></div>
       <div class="cfg-field"><label>text <span class="orig">(katakcha matni kaliti)</span></label><input data-cfgkey="cell_text" placeholder="text"></div>
+      <div class="cfg-field"><label>items <span class="orig">(ro'yxat bandlari kaliti)</span></label><input data-cfgkey="items" placeholder="items"></div>
+      <div class="cfg-field"><label>ordered <span class="orig">(raqamli ro'yxat belgisi kaliti)</span></label><input data-cfgkey="ordered" placeholder="ordered"></div>
     </div>
 
     <div class="modal-section-title">Format kalitlari</div>
@@ -442,6 +456,7 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <div class="cfg-field"><label>type: matn holati</label><input data-cfgval="type_text" placeholder="text"></div>
       <div class="cfg-field"><label>type: matematik holati</label><input data-cfgval="type_math" placeholder="math"></div>
       <div class="cfg-field"><label>type: jadval holati</label><input data-cfgval="type_table" placeholder="table"></div>
+      <div class="cfg-field"><label>type: ro'yxat holati</label><input data-cfgval="type_list" placeholder="list"></div>
       <div class="cfg-field"><label>font_weight qiymati</label><input data-cfgval="bold" placeholder="bold"></div>
       <div class="cfg-field"><label>font_style qiymati</label><input data-cfgval="italic" placeholder="italic"></div>
       <div class="cfg-field"><label>text_decoration: tagiga chizish</label><input data-cfgval="underline" placeholder="underline"></div>
@@ -612,8 +627,37 @@ document.getElementById('tblInsertBtn').addEventListener('click', ()=>{
   generateJSON();
 });
 
+document.getElementById('ulBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('ulBtn').addEventListener('click', ()=>{
+  editor.focus();
+  restoreSelection();
+  document.execCommand('insertHTML', false, '<ul class="editor-list"><li>Band</li></ul><br class="p-break">');
+  saveSelection();
+  generateJSON();
+});
+
+document.getElementById('olBtn').addEventListener('mousedown', e=>e.preventDefault());
+document.getElementById('olBtn').addEventListener('click', ()=>{
+  editor.focus();
+  restoreSelection();
+  document.execCommand('insertHTML', false, '<ol class="editor-list"><li>Band</li></ol><br class="p-break">');
+  saveSelection();
+  generateJSON();
+});
+
 editor.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){
+    // Inside a bullet/numbered list item, let the browser handle Enter
+    // natively so it creates a new <li> (and exits the list on an empty
+    // last item), instead of forcing our own paragraph-break markup.
+    const sel = window.getSelection();
+    let node = sel.anchorNode;
+    while(node && node !== editor){
+      if(node.nodeType === Node.ELEMENT_NODE && (node.tagName === 'LI' || node.tagName === 'UL' || node.tagName === 'OL')){
+        return;
+      }
+      node = node.parentNode;
+    }
     e.preventDefault();
     document.execCommand('insertHTML', false, '<br class="p-break">');
   }
@@ -830,10 +874,11 @@ const DEFAULT_CONFIG = {
     font_weight: 'font_weight', font_style: 'font_style',
     text_decoration: 'text_decoration',
     color: 'color', background_color: 'background_color', font_size: 'font_size',
-    id: 'id', headers: 'headers', rows: 'rows', align: 'align', cell_text: 'text'
+    id: 'id', headers: 'headers', rows: 'rows', align: 'align', cell_text: 'text',
+    items: 'items', ordered: 'ordered'
   },
   values: {
-    type_text: 'text', type_math: 'math', type_table: 'table',
+    type_text: 'text', type_math: 'math', type_table: 'table', type_list: 'list',
     bold: 'bold', italic: 'italic',
     underline: 'underline', linethrough: 'line-through'
   }
@@ -987,6 +1032,14 @@ function walk(node, inherited, out){
     out.push({type:'table', id: myTableId, headerCells, bodyRows});
     return;
   }
+  if(tag === 'ul' || tag === 'ol'){
+    // Only direct <li> children — nested lists aren't supported yet.
+    const items = Array.from(node.children)
+      .filter(ch => ch.tagName === 'LI')
+      .map(li => extractCellData(li));
+    out.push({type:'list', ordered: tag === 'ol', items});
+    return;
+  }
 
   const style = styleFromNode(node, inherited);
   for(const child of node.childNodes){
@@ -1047,6 +1100,16 @@ function remapBlock(b){
     out[CONFIG.keys.id] = b.id;
     out[CONFIG.keys.headers] = b.headerCells.map(c => remapCell(c, true));
     out[CONFIG.keys.rows] = b.bodyRows.map(row => row.map(c => remapCell(c, false)));
+    return out;
+  }
+  if(b.type === 'list'){
+    // Each list item reuses the same {type:"text", content:[...runs]}
+    // shape as a table cell, so mixed formatting inside one bullet
+    // (e.g. a bold word followed by plain text) is preserved too.
+    const out = {};
+    out[CONFIG.keys.type] = CONFIG.values.type_list;
+    out[CONFIG.keys.ordered] = b.ordered;
+    out[CONFIG.keys.items] = b.items.map(item => remapCell(item, false));
     return out;
   }
   const out = {};
