@@ -98,7 +98,9 @@ header p{font-size:14px;font-weight:500;color:#444;margin-top:10px;}
   border:2px solid var(--ink);
   border-radius:5px;
   height:520px;
-  overflow:hidden;
+  min-height:220px;
+  overflow:auto;
+  resize:vertical;
   background:#f2f2f2;
   display:flex;align-items:center;justify-content:center;
   transition:background .15s ease, border-color .15s ease;
@@ -628,6 +630,7 @@ html[data-theme="dark"] .pdf-empty-state{color:#999;}
         <button class="btn wide blue" id="pdfOpenBtn">📂 PDF ochish</button>
         <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none;">
         <span class="pdf-filename" id="pdfFileName"></span>
+        <button class="btn wide" id="pdfResetHeightBtn" title="PDF oynasi balandligini boshlang'ich holatga qaytarish">↺ Balandlikni sbros</button>
         <button class="btn wide red" id="pdfCloseBtn" style="display:none;margin-left:auto;">✕ Yopish</button>
       </div>
 
@@ -639,7 +642,7 @@ html[data-theme="dark"] .pdf-empty-state{color:#999;}
         </div>
       </div>
 
-      <div class="hint">PDF ichidagi matnni sichqoncha bilan belgilab <b>Ctrl+C</b> bilan nusxalang, so'ng chapdagi muharrirga <b>Ctrl+V</b> bilan joylashtiring — boshqa oyna ochish shart emas.</div>
+      <div class="hint">PDF ichidagi matnni sichqoncha bilan belgilab <b>Ctrl+C</b> bilan nusxalang, so'ng chapdagi muharrirga <b>Ctrl+V</b> bilan joylashtiring — boshqa oyna ochish shart emas. PDF oynasining <b>pastki o'ng burchagidan</b> ushlab pastga (yoki yuqoriga) xohlagancha sudrab, balandligini o'zgartirasiz — chegara yo'q. <b>↺ Balandlikni sbros</b> tugmasi bosilsa, oyna qayta boshlang'ich o'lchamiga qaytadi.</div>
     </div>
 
     <div class="panel" id="jsonPanel" style="display:none;">
@@ -1941,6 +1944,36 @@ generateJSON();
   document.getElementById('layoutEditorBig').addEventListener('click', ()=> applyAndSave(68));
   document.getElementById('layoutEqual').addEventListener('click', ()=> applyAndSave(50));
   document.getElementById('layoutPdfBig').addEventListener('click', ()=> applyAndSave(32));
+})();
+
+// ---------- remember the PDF viewer's height (drag the bottom-right
+// corner of the PDF box to stretch it taller/shorter) ----------
+(function(){
+  const dropzone = document.getElementById('pdfDropzone');
+  const resetBtn = document.getElementById('pdfResetHeightBtn');
+  const STORAGE_KEY = 'manga-json-pdf-height';
+
+  let saved = null;
+  try{ saved = parseInt(localStorage.getItem(STORAGE_KEY), 10); }catch(e){}
+  if(saved && saved > 150){ dropzone.style.height = saved + 'px'; }
+
+  let saveTimer = null;
+  if(window.ResizeObserver){
+    const ro = new ResizeObserver(()=>{
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>{
+        try{
+          localStorage.setItem(STORAGE_KEY, String(Math.round(dropzone.getBoundingClientRect().height)));
+        }catch(e){}
+      }, 300);
+    });
+    ro.observe(dropzone);
+  }
+
+  resetBtn.addEventListener('click', ()=>{
+    dropzone.style.height = '';
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  });
 })();
 
 // ---------- dark mode toggle ----------
