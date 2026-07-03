@@ -159,6 +159,19 @@ input[type=color]{
 #editor ul.editor-list li:focus, #editor ol.editor-list li:focus{
   outline:2px solid var(--blue); outline-offset:2px; border-radius:2px;
 }
+#editor .enter-marker{
+  display:inline-block;
+  background:#ffe08a;
+  color:#a15c00;
+  border:1px solid #d99a00;
+  border-radius:4px;
+  padding:0 5px;
+  margin:0 2px;
+  font-size:13px;
+  font-weight:700;
+  cursor:default;
+  user-select:none;
+}
 
 .actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 
@@ -271,6 +284,38 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
   border-top:2px dashed #ddd;
   padding-top:16px;
 }
+
+.doc-modal{max-width:920px;}
+.doc-modal h3{
+  font-family:'Bangers',cursive;
+  font-size:20px;letter-spacing:.5px;
+  margin:22px 0 8px 0;color:var(--ink);
+}
+.doc-modal h3:first-of-type{margin-top:6px;}
+.doc-modal p{font-size:14px;line-height:1.6;color:#333;margin:6px 0;}
+.doc-modal .doc-code{
+  background:#0f0f0f;color:#8bffa3;
+  font-family:'Space Mono',monospace;
+  font-size:12.5px;line-height:1.55;
+  padding:14px;border-radius:6px;
+  overflow-x:auto;white-space:pre;
+  margin:10px 0;border:2px solid var(--ink);
+}
+.doc-modal table.doc-table{border-collapse:collapse;width:100%;margin:8px 0 14px;font-size:13px;}
+.doc-modal table.doc-table th, .doc-modal table.doc-table td{
+  border:1px solid #ccc;padding:6px 8px;text-align:left;vertical-align:top;
+}
+.doc-modal table.doc-table th{background:#fff4c2;}
+.doc-modal code.inline{
+  background:#f2f2f2;border:1px solid #ddd;border-radius:4px;
+  padding:1px 5px;font-family:'Space Mono',monospace;font-size:12.5px;
+}
+.doc-modal ul{margin:6px 0 6px 20px;font-size:14px;line-height:1.6;color:#333;}
+.coffee-wrap{
+  display:flex;justify-content:center;align-items:center;
+  padding:14px 0;
+}
+.coffee-wrap img{display:block;}
 </style>
 </head>
 <body>
@@ -280,6 +325,7 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
   <h1>MANGA TEXT → JSON</h1>
   <p>Sarlavha, kichik sarlavha va formatlangan/matematik bloklardan JSON yig'ing</p>
   <button class="btn wide purple" id="settingsBtn" style="margin-top:10px;">⚙ JSON kalitlarini sozlash</button>
+  <button class="btn wide green" id="docBtn" style="margin-top:10px;">📖 Qo'llanma / JSON hujjatlari</button>
 </header>
 
 <div class="grid">
@@ -380,7 +426,8 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
       <b>Integral / formula misoli:</b> "∫ x dx = x²/2 + C" deb yozib, hammasini belgilang va <b>𝑓(x) Math</b> tugmasini bosing — butun ifoda bitta <code>"type":"math"</code> blok bo'ladi.<br>
       <b>Enter</b> — yangi abzas (<code>\n</code>, <code>"type":"text"</code>).<br>
       <b>▦ Jadval:</b> tugmani bosing, qator va ustun sonini kiriting — matn o'rtasiga jadval qo'yiladi. Birinchi qator avtomatik <b>sarlavha (headers)</b> bo'ladi, qolganlari <b>rows</b>. Sarlavha katagida turib ⯇/▭/⯈ tugmalari bilan tekislashni tanlang. Har bir katakchani bold/italic/rang/o'lcham bilan formatlashingiz mumkin — JSON'da <code>"type":"table"</code>, <code>"id"</code>, <code>"headers":[{"text":...,"align":...}]</code> va <code>"rows":[[{"text":...}]]</code> ko'rinishida chiqadi.<br>
-      <b>• / 1. Ro'yxat:</b> tugmani bosing — belgili yoki raqamli ro'yxat qo'shiladi. Har bir bandni yozib bo'lgach <b>Enter</b> bosing — yangi band avtomatik qo'shiladi (bo'sh bandda Enter bossangiz ro'yxatdan chiqasiz). Har bir bandni ham bold/italic/rang bilan formatlash mumkin — JSON'da <code>"type":"list"</code>, <code>"ordered":true/false</code> va <code>"items":[{"type":"text","content":[{"text":...}]}]</code> ko'rinishida chiqadi.
+      <b>• / 1. Ro'yxat:</b> tugmani bosing — belgili yoki raqamli ro'yxat qo'shiladi. Har bir bandni yozib bo'lgach <b>Enter</b> bosing — yangi band avtomatik qo'shiladi (bo'sh bandda Enter bossangiz ro'yxatdan chiqasiz). Har bir bandni ham bold/italic/rang bilan formatlash mumkin — JSON'da <code>"type":"list"</code>, <code>"ordered":true/false</code> va <code>"items":[{"type":"text","content":[{"text":...}]}]</code> ko'rinishida chiqadi.<br>
+      <b>Format tozalash:</b> belgilangan qismdan bold/rang/o'lcham kabi barcha formatlarni olib tashlaydi. Agar belgilangan qism ichida <b>Enter</b> (qator) bo'lsa, u ham olib tashlanadi (ikki qator qo'shilib bitta bo'ladi), lekin o'sha joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi — shu belgi orqali qayerda Enter olib tashlanganini topib, kerak bo'lsa qo'lda tuzatasiz (belgini belgilab o'chirib, joyiga qayta Enter bosishingiz mumkin). Bu belgi faqat tahrirlovchida ko'rinadi, <b>JSON'ga umuman tushmaydi</b>.
     </div>
   </div>
 
@@ -473,6 +520,174 @@ footer{text-align:center;font-size:12px;color:#777;margin-top:22px;}
   </div>
 </div>
 
+<div class="modal-backdrop" id="docModalBackdrop">
+  <div class="modal doc-modal">
+    <h2>📖 Dastur qo'llanmasi va JSON hujjatlari</h2>
+    <div class="sub">Dastur qanday ishlashi, har bir blok turi (matn, matematik, jadval, ro'yxat) JSON'da qanday ko'rinishda chiqishi — barchasi misollar bilan.</div>
+
+    <div class="coffee-wrap">
+      <a href="https://www.buymeacoffee.com/sFisher611" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+    </div>
+
+    <h3>Dastur nima qiladi?</h3>
+    <p>Bu dastur — matnni (bold, italic, tagiga/ustidan chizish, rang, o'lcham, indeks/daraja, jadval, ro'yxat kabi formatlar bilan) vizual tahrirlab, so'ng bir tugma bosish bilan <code class="inline">structured JSON</code> formatga aylantirish uchun mo'ljallangan. Chap tomonda yozasiz/formatlaysiz, o'ng tomonda esa tayyor JSON avtomatik chiqadi. JSON'dagi barcha kalit va qiymat nomlarini "⚙ JSON kalitlarini sozlash" tugmasi orqali o'zingizga moslab o'zgartirishingiz mumkin.</p>
+
+    <h3>Umumiy JSON tuzilishi</h3>
+    <p>Har doim hujjat uchta asosiy qismdan iborat bo'ladi: <code class="inline">title</code>, <code class="inline">subtitle</code> va <code class="inline">blocks</code> (bloklar ro'yxati). <code class="inline">blocks</code> ichida esa matn, matematik, jadval va ro'yxat bloklari ketma-ket keladi.</p>
+    <div class="doc-code">{
+  "title": "Sarlavha matni",
+  "subtitle": "Kichik sarlavha matni",
+  "blocks": [ ... ]
+}</div>
+
+    <h3>1. Oddiy matn bloki — <code class="inline">type: "text"</code></h3>
+    <p>Muharrirda yozgan har bir bir xil formatdagi matn bo'lagi alohida blok bo'lib chiqadi. Format bo'lmasa, faqat <code class="inline">type</code> va <code class="inline">content</code> chiqadi.</p>
+    <div class="doc-code">{
+  "type": "text",
+  "content": "Oddiy, formatlanmagan matn."
+}
+
+{
+  "type": "text",
+  "content": "Qalin va qizil matn.",
+  "font_weight": "bold",
+  "color": "#e8394d"
+}</div>
+    <p>Matnda <b>Enter</b> bossangiz, u alohida blok sifatida qator ko'chirish belgisini bildiradi:</p>
+    <div class="doc-code">{ "type": "text", "content": "\n" }</div>
+
+    <h3>2. Matematik / kimyoviy blok — <code class="inline">type: "math"</code></h3>
+    <p>x² (daraja), H₂O (indeks) tugmalari yoki butun ifodani "𝑓(x) Math" tugmasi bilan belgilaganda shu turdagi blok chiqadi.</p>
+    <div class="doc-code">{ "type": "math", "content": "^{2}" }
+{ "type": "math", "content": "_{2}" }
+{ "type": "math", "content": "∫ x dx = x²/2 + C" }</div>
+
+    <h3>Format kalitlari (barcha matn/matematik bloklarda ishlatiladi)</h3>
+    <table class="doc-table">
+      <tr><th>Kalit</th><th>Qiymat</th><th>Nima uchun</th></tr>
+      <tr><td><code class="inline">font_weight</code></td><td><code class="inline">"bold"</code></td><td>Qalin matn</td></tr>
+      <tr><td><code class="inline">font_style</code></td><td><code class="inline">"italic"</code></td><td>Qiya matn</td></tr>
+      <tr><td><code class="inline">text_decoration</code></td><td><code class="inline">"underline"</code> / <code class="inline">"line-through"</code></td><td>Tagiga chizish / ustidan chizish</td></tr>
+      <tr><td><code class="inline">color</code></td><td><code class="inline">"#e8394d"</code> (hex)</td><td>Matn rangi</td></tr>
+      <tr><td><code class="inline">background_color</code></td><td><code class="inline">"#ffcb05"</code> (hex)</td><td>Belgilash (fon) rangi</td></tr>
+      <tr><td><code class="inline">font_size</code></td><td><code class="inline">"24px"</code></td><td>Shrift o'lchami</td></tr>
+    </table>
+    <p>Bu kalitlar formatlanmagan matnda umuman chiqmaydi — faqat qo'llanilgan formatlar uchun qo'shiladi.</p>
+
+    <h3>3. Jadval bloki — <code class="inline">type: "table"</code></h3>
+    <p>▦ Jadval tugmasi bilan qo'shilgan jadval shunday chiqadi: birinchi qator <code class="inline">headers</code>, qolgani <code class="inline">rows</code>. Har bir katakcha o'zi alohida obyekt bo'lib, ichida <code class="inline">content</code> — formatlangan matn bo'laklari (run'lar) massivi bo'ladi. Shu tufayli bitta katakchada bir so'z bold, qolgani oddiy bo'lsa ham, ikkalasi ham alohida-alohida to'g'ri chiqadi.</p>
+    <div class="doc-code">{
+  "type": "table",
+  "id": "table_1",
+  "headers": [
+    { "type": "text", "align": "left", "content": [ { "text": "Element" } ] },
+    { "type": "text", "align": "center", "content": [ { "text": "Belgi" } ] }
+  ],
+  "rows": [
+    [
+      {
+        "type": "text",
+        "content": [
+          { "text": "Kislorod", "font_weight": "bold" },
+          { "text": " gazi" }
+        ]
+      },
+      { "type": "text", "content": [ { "text": "O" } ] }
+    ],
+    [
+      { "type": "text", "content": [ { "text": "Vodorod" } ] },
+      { "type": "text", "content": [ { "text": "H" } ] }
+    ]
+  ]
+}</div>
+    <p><code class="inline">align</code> ("left" / "center" / "right") faqat sarlavha (<code class="inline">headers</code>) katakchalarida bo'ladi — jadvaldagi ⯇/▭/⯈ tugmalari bilan boshqariladi.</p>
+
+    <h3>4. Ro'yxat bloki — <code class="inline">type: "list"</code></h3>
+    <p>• yoki 1. Ro'yxat tugmasi bilan qo'shilgan bo'lim shunday chiqadi. <code class="inline">ordered: false</code> — belgili (bullet) ro'yxat, <code class="inline">ordered: true</code> — raqamli ro'yxat. Har bir band jadval katakchasi bilan bir xil tuzilishda: <code class="inline">content</code> ichida formatlangan run'lar massivi.</p>
+    <div class="doc-code">{
+  "type": "list",
+  "ordered": false,
+  "items": [
+    {
+      "type": "text",
+      "content": [
+        { "text": "If you're a coach, your goal might be to win a championship. " },
+        { "text": "Your system", "font_weight": "bold" },
+        { "text": " is the way you recruit players." }
+      ]
+    },
+    {
+      "type": "text",
+      "content": [
+        { "text": "If you're an entrepreneur, your goal might be to build a million-dollar business." }
+      ]
+    }
+  ]
+}</div>
+
+    <h3>To'liq namuna: hammasi birga</h3>
+    <p>Sarlavha, oddiy matn, qalin matn, matematik ifoda, jadval va ro'yxatni o'z ichiga olgan to'liq hujjat qanday ko'rinishda chiqishi:</p>
+    <div class="doc-code">{
+  "title": "Kimyo darsligi",
+  "subtitle": "1-bob: Elementlar",
+  "blocks": [
+    { "type": "text", "content": "Suv formulasi H" },
+    { "type": "math", "content": "_{2}" },
+    { "type": "text", "content": "O bo'ladi. " },
+    { "type": "text", "content": "Bu muhim!", "font_weight": "bold", "color": "#e8394d" },
+    { "type": "text", "content": "\n" },
+    {
+      "type": "table",
+      "id": "table_1",
+      "headers": [
+        { "type": "text", "align": "left", "content": [ { "text": "Element" } ] },
+        { "type": "text", "align": "left", "content": [ { "text": "Belgi" } ] }
+      ],
+      "rows": [
+        [
+          { "type": "text", "content": [ { "text": "Kislorod" } ] },
+          { "type": "text", "content": [ { "text": "O" } ] }
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "items": [
+        { "type": "text", "content": [ { "text": "Elementlarni yodlang" } ] },
+        { "type": "text", "content": [ { "text": "Formulalarni mashq qiling" } ] }
+      ]
+    }
+  ]
+}</div>
+
+    <h3>Muharrir tugmalari — qisqacha</h3>
+    <ul>
+      <li><b>B / I / U / S</b> — belgilangan matnni qalin/qiya/tagiga chizilgan/ustidan chizilgan qilish. Faqat belgilangan qismga ta'sir qiladi.</li>
+      <li><b>Razmer</b>, <b>A (rang)</b>, <b>▨ (fon rangi)</b> — belgilangan matnga shrift o'lchami/rang/fon qo'llaydi.</li>
+      <li><b>¶ Abzas</b> — kursor turgan joyga yangi qator (paragraf chegarasi) qo'shadi.</li>
+      <li><b>⯇ Chap / ▭ Markaz / ⯈ O'ng</b> — jadval sarlavha katakchasini tekislash uchun.</li>
+      <li><b>▦ Jadval</b> — qator/ustun sonini so'rab, jadval qo'shadi.</li>
+      <li><b>• Ro'yxat / 1. Ro'yxat</b> — belgili yoki raqamli ro'yxat qo'shadi. Bandni yozib Enter bossangiz, yangi band avtomatik ochiladi.</li>
+      <li><b>x² / x₂ / 𝑓(x) Math</b> — belgilangan qismni daraja/indeks yoki to'liq matematik blok qiladi.</li>
+      <li><b>Format tozalash</b> — belgilangan qismdan barcha formatni (va agar bo'lsa, ichidagi Enter'ni ham) tozalaydi. Enter olib tashlangan joyga sariq <span class="enter-marker" style="display:inline-block;background:#ffe08a;color:#a15c00;border:1px solid #d99a00;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700;">⏎</span> belgisi qo'yiladi (faqat tahrirlovchida ko'rinadi, JSON'ga tushmaydi) — shu orqali qayerda Enter olib tashlanganini topib, kerak bo'lsa qo'lda tuzatasiz.</li>
+      <li><b>🗑 Hammasini o'chirish</b> — butun matnni (jadval, ro'yxat bilan birga) o'chiradi, tasdiqlash so'raydi.</li>
+      <li><b>Suzuvchi panel</b> — matn belgilaganingizda tepada chiqadi, bir xil tugmalarning kichraytirilgan varianti, shu jumladan ✕ (format tozalash) va 🗑 (belgilangan matnni butunlay o'chirish).</li>
+    </ul>
+
+    <h3>JSON kalit/qiymat nomlarini o'zgartirish</h3>
+    <p>"⚙ JSON kalitlarini sozlash" tugmasi orqali <code class="inline">title</code>, <code class="inline">content</code>, <code class="inline">font_weight</code> kabi barcha kalit nomlarini, shuningdek <code class="inline">"bold"</code>, <code class="inline">"table"</code> kabi qiymat nomlarini o'zingiz ishlatadigan tizimga moslab o'zgartirishingiz mumkin. Bo'sh qoldirilgan maydonlar uchun standart nom ishlatiladi.</p>
+
+    <div class="coffee-wrap">
+      <a href="https://www.buymeacoffee.com/sFisher611" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn wide red" id="docClose">✕ Yopish</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const editor = document.getElementById('editor');
 const jsonOut = document.getElementById('jsonOut');
@@ -525,12 +740,12 @@ document.querySelectorAll('.btn[data-cmd]').forEach(btn=>{
 // just like with bold/italic, it can behave inconsistently across browsers
 // and doesn't reliably clean up the custom tags/spans this editor inserts.
 //
-// IMPORTANT: paragraph breaks (<br class="p-break">) inside the selection
-// are kept as real <br> elements, NOT merged into the plain text as "\n"
-// characters. If they get embedded inside one big text node instead, the
-// editor's own Enter-position tracking gets confused — new text you type
-// afterwards can end up jumping to the wrong paragraph. Keeping each <br>
-// as its own node keeps every paragraph boundary exactly where it was.
+// If the selection contains an Enter (paragraph break), that break is
+// REMOVED too (the two sides join into one line) — but a small yellow
+// "⏎" marker is dropped in its exact spot. The marker is purely visual:
+// walk()/generateJSON() skip it completely, so it never shows up in the
+// JSON. It's there so you can scan the text, see exactly which Enters got
+// removed, and manually fix/retype them if that wasn't what you wanted.
 function clearSelectionFormatting(){
   restoreSelection();
   const sel = window.getSelection();
@@ -538,21 +753,39 @@ function clearSelectionFormatting(){
   const range = sel.getRangeAt(0);
   const frag = range.extractContents();
 
+  function makeEnterMarker(){
+    const span = document.createElement('span');
+    span.className = 'enter-marker';
+    span.contentEditable = 'false';
+    span.dataset.marker = 'enter';
+    span.title = "Bu yerda Enter (qator) olib tashlandi — matnni tekshiring";
+    span.textContent = '⏎';
+    return span;
+  }
+
   const nodes = [];
   let buffer = '';
   function flush(){
     if(buffer.length){ nodes.push(document.createTextNode(buffer)); buffer = ''; }
   }
+  function appendText(str){
+    const parts = str.split('\n');
+    parts.forEach((part, i)=>{
+      buffer += part;
+      if(i < parts.length - 1){
+        flush();
+        nodes.push(makeEnterMarker());
+      }
+    });
+  }
   function walkClean(node){
     node.childNodes.forEach(child=>{
       if(child.nodeType === Node.TEXT_NODE){
-        buffer += child.textContent;
+        appendText(child.textContent);
       } else if(child.nodeType === Node.ELEMENT_NODE){
         if(child.tagName === 'BR'){
           flush();
-          const br = document.createElement('br');
-          br.className = 'p-break';
-          nodes.push(br);
+          nodes.push(makeEnterMarker());
         } else {
           walkClean(child);
         }
@@ -711,7 +944,17 @@ editor.addEventListener('keydown', (e)=>{
 editor.addEventListener('paste', (e)=>{
   e.preventDefault();
   const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-  document.execCommand('insertText', false, text);
+  // Turn every line break in the pasted text into a real <br class="p-break">
+  // element (same as pressing Enter), instead of a raw "\n" character sitting
+  // invisibly inside a text node. A raw "\n" doesn't render as a line break
+  // and can later get silently dropped (e.g. two sentences merging together
+  // with no space) once that text is touched by formatting tools.
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const html = escaped.split(/\r\n|\r|\n/).join('<br class="p-break">');
+  document.execCommand('insertHTML', false, html);
 });
 
 // ---------- wrap selection in a styled span ----------
@@ -957,6 +1200,17 @@ document.getElementById('cfgClose').addEventListener('click', ()=>{
 modalBackdrop.addEventListener('mousedown', (e)=>{
   if(e.target === modalBackdrop) modalBackdrop.classList.remove('show');
 });
+
+const docModalBackdrop = document.getElementById('docModalBackdrop');
+document.getElementById('docBtn').addEventListener('click', ()=>{
+  docModalBackdrop.classList.add('show');
+});
+document.getElementById('docClose').addEventListener('click', ()=>{
+  docModalBackdrop.classList.remove('show');
+});
+docModalBackdrop.addEventListener('mousedown', (e)=>{
+  if(e.target === docModalBackdrop) docModalBackdrop.classList.remove('show');
+});
 document.getElementById('cfgReset').addEventListener('click', ()=>{
   fillModalInputs(DEFAULT_CONFIG);
 });
@@ -1056,6 +1310,12 @@ function walk(node, inherited, out){
   }
   if(tag === 'sub'){
     out.push({type:'math', content: '_{' + node.textContent + '}', ...inherited});
+    return;
+  }
+  if(node.dataset && node.dataset.marker === 'enter'){
+    // Purely a visual "an Enter was removed here" flag left by the format
+    // clearing tool — never part of the actual content, so it must never
+    // reach the JSON.
     return;
   }
   if(node.dataset && node.dataset.math === 'true'){
