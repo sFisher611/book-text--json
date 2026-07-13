@@ -287,13 +287,29 @@ input[type=color]{
 
 .actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 
-#jsonOut{
-  width:100%;min-height:360px;
+.json-output-wrap{
+  display:flex;align-items:stretch;
+  border:2px solid var(--ink);border-radius:5px;
+  background:#0f0f0f;overflow:hidden;
+}
+.json-gutter{
+  flex:0 0 auto;
+  padding:14px 8px 14px 12px;
   font-family:'Space Mono', monospace;
   font-size:13px;line-height:1.5;
-  border:2px solid var(--ink);border-radius:5px;
+  color:#5a5a5a;background:#161616;
+  text-align:right;user-select:none;
+  white-space:pre;overflow:hidden;
+  border-right:1px solid #2a2a2a;
+}
+#jsonOut{
+  flex:1 1 0%;width:100%;min-height:360px;
+  font-family:'Space Mono', monospace;
+  font-size:13px;line-height:1.5;
+  border:none;border-radius:0;
   padding:14px;background:#0f0f0f;color:#8bffa3;
   resize:vertical;white-space:pre;
+  outline:none;
 }
 
 .float-toolbar{
@@ -664,7 +680,10 @@ html[data-theme="dark"] .pdf-empty-state{color:#999;}
 
     <div class="panel" id="jsonPanel" style="display:none;">
       <div class="panel-title">{ } Natija <span class="tag">JSON</span></div>
-      <textarea id="jsonOut" readonly placeholder="JSON shu yerda chiqadi..."></textarea>
+      <div class="json-output-wrap">
+        <div class="json-gutter" id="jsonGutter">1</div>
+        <textarea id="jsonOut" readonly spellcheck="false" placeholder="JSON shu yerda chiqadi..."></textarea>
+      </div>
       <div class="actions">
         <button class="btn blue wide" id="genBtn">⚡ JSON yaratish</button>
         <button class="btn wide" id="copyBtn">⧉ Nusxalash</button>
@@ -924,6 +943,7 @@ html[data-theme="dark"] .pdf-empty-state{color:#999;}
 <script>
 const editor = document.getElementById('editor');
 const jsonOut = document.getElementById('jsonOut');
+const jsonGutter = document.getElementById('jsonGutter');
 const copyMsg = document.getElementById('copyMsg');
 const titleInput = document.getElementById('titleInput');
 const subtitleInput = document.getElementById('subtitleInput');
@@ -1865,6 +1885,17 @@ function remapBlock(b){
   return out;
 }
 
+function updateJsonGutter(){
+  const lineCount = jsonOut.value ? jsonOut.value.split('\n').length : 1;
+  let nums = '';
+  for(let i = 1; i <= lineCount; i++){
+    nums += i;
+    if(i < lineCount) nums += '\n';
+  }
+  jsonGutter.textContent = nums;
+}
+jsonOut.addEventListener('scroll', ()=>{ jsonGutter.scrollTop = jsonOut.scrollTop; });
+
 function generateJSON(){
   tableCounter = 0;
   let blocks = [];
@@ -1889,6 +1920,7 @@ function generateJSON(){
   // list items, table rows...) is visible without needing to scroll.
   jsonOut.style.height = 'auto';
   jsonOut.style.height = Math.max(360, jsonOut.scrollHeight + 4) + 'px';
+  updateJsonGutter();
   return json;
 }
 
